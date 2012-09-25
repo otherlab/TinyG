@@ -37,7 +37,8 @@
 
 // default machine profiles - chose only one:
 
-#include "settings/settings_default.h"				// Default settings for shipment
+//#include "settings/settings_default.h"				// Default settings for shipment
+#include "settings/settings_otherlab.h"				// Otherlab Othercutter R3.5
 //#include "settings/settings_zen7x12.h"			// Zen Toolworks 7x12
 //#include "settings/settings_shapeoko375.h"		// Shapeoko 375mm kit
 //#include "settings/settings_probotixV90.h"		// Probotix FireballV90
