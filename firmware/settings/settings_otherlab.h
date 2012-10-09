@@ -51,7 +51,7 @@
 #define M1_STEP_ANGLE 		1.8			// 1sa
 #define M1_TRAVEL_PER_REV 	54.023		// 1tr
 #define M1_MICROSTEPS 		8			// 1mi		1,2,4,8
-#define M1_POLARITY 		0			// 1po		0=normal, 1=reversed
+#define M1_POLARITY 		1			// 1po		0=normal, 1=reversed
 #define M1_POWER_MODE 		0			// 1pm		TRUE=low power idle enabled 
 
 #define M2_MOTOR_MAP 		Y
@@ -62,23 +62,23 @@
 #define M2_POWER_MODE 		0			// hold
 
 #define M3_MOTOR_MAP 		Z
-#define M3_STEP_ANGLE 		1.5
+#define M3_STEP_ANGLE 		15
 #define M3_TRAVEL_PER_REV 	2.438
 #define M3_MICROSTEPS 		2
-#define M3_POLARITY 		0
+#define M3_POLARITY 		1
 #define M3_POWER_MODE 		1			// z-axis leadscrew doesn't need hold, enable low power idle
 
 #define M4_MOTOR_MAP 		A
 #define M4_STEP_ANGLE 		1.8
-#define M4_TRAVEL_PER_REV 	180.0			// degrees moved per motor rev
+#define M4_TRAVEL_PER_REV 	180.0		// degrees moved per motor rev
 #define M4_MICROSTEPS 		8
-#define M4_POLARITY 		0
+#define M4_POLARITY 		1			
 #define M4_POWER_MODE 		0			// hold
 
 // *** axis settings ***
 
 #define X_AXIS_MODE 					AXIS_STANDARD		// xam		see canonical_machine.h cmAxisMode for valid values
-#define X_VELOCITY_MAX 					10000 				// xvm		G0 max velocity in mm/min
+#define X_VELOCITY_MAX 					15000 				// xvm		G0 max velocity in mm/min
 #define X_FEEDRATE_MAX 					1000				// xfr 		G1 max feed rate in mm/min
 #define X_TRAVEL_MAX 					320					// travel between switches or crashes
 #define X_JERK_MAX 						JERK_MAX			// xjm
@@ -90,7 +90,7 @@
 #define X_ZERO_BACKOFF 					1					// xzb		mm
 
 #define Y_AXIS_MODE 					AXIS_STANDARD
-#define Y_VELOCITY_MAX 					10000
+#define Y_VELOCITY_MAX 					15000
 #define Y_FEEDRATE_MAX 					1000
 #define Y_TRAVEL_MAX 					-1			// Y-axis is infinite
 #define Y_JERK_MAX 						JERK_MAX
@@ -102,10 +102,10 @@
 #define Y_ZERO_BACKOFF 					1
 
 #define Z_AXIS_MODE 					AXIS_STANDARD
-#define Z_VELOCITY_MAX 					1000
+#define Z_VELOCITY_MAX 					10000
 #define Z_FEEDRATE_MAX 					500
 #define Z_TRAVEL_MAX 					25
-#define Z_JERK_MAX 						200000000	// 200 Million
+#define Z_JERK_MAX 						JERK_MAX	// 200 Million
 #define Z_JUNCTION_DEVIATION 			JUNCTION_DEVIATION
 #define Z_SWITCH_MODE 					1
 #define Z_SEARCH_VELOCITY 				500.0
@@ -120,7 +120,7 @@
 #define A_JERK_MAX 						24000000000	// yes, 24 Billion
 #define A_JUNCTION_DEVIATION 			0.1
 #define A_RADIUS 						1.0			// deg
-#define A_SWITCH_MODE 					0			// disable limit switch halt
+#define A_SWITCH_MODE 					1			// disable limit switch halt
 #define A_SEARCH_VELOCITY 				6000.0		// deg/min
 #define A_LATCH_VELOCITY 				600.0		// deg/min
 #define A_LATCH_BACKOFF 				15.0		// deg
