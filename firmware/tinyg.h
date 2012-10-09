@@ -17,6 +17,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #ifndef tinyg_h
@@ -24,9 +32,8 @@
 
 // NOTE: This header requires <stdio.h> be included previously
 
-#define TINYG_VERSION_NUMBER	0.94
-#define TINYG_BUILD_NUMBER   	339.09
-
+#define TINYG_VERSION_NUMBER	0.95
+#define TINYG_BUILD_NUMBER   	341.03
 
 /****** DEVELOPMENT SETTINGS ******/
 
@@ -53,24 +60,7 @@
 #endif
 
 // RUNTIME SETTINGS
-#define __UNFORGIVING			// fails hard versus introduce errors
-#define __INFO					// enables exception logging (see util.h)
-
-/***** Boolean Comparisons *****/
-
-#ifndef false
-#define false 0
-#endif
-#ifndef true
-#define true 1
-#endif
-
-#ifndef FALSE			// deprecated, use lowercase forms
-#define FALSE 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#endif
+#define __UNFORGIVING			// fail hard versus introducing motion errors
 
 /*************************************************************************
  * TinyG application-specific prototypes, defines and globals
@@ -90,6 +80,8 @@ typedef void (*fptr_void_double)(double); 	// returns void, double arg (config b
 #define AXES 6					// number of axes supported in this version
 #define MOTORS 4				// number of motors on the board
 #define COORDS 6				// number of supported coordinate systems (1-6)
+#define PWMS 2					// number of supported PWM channels
+
 // if you change COORDS you must adjust the entries in cfgArray table in config.c
 
 enum tgAxisNum {				// define axis numbers and array indexes
@@ -111,57 +103,98 @@ enum tgMotorNum {				// define motor numbers and array indexes
 		MOTOR_4
 };
 
-// Device structure - structure to allow iteration through shared devices
-struct deviceSingleton {
-	struct PORT_struct *port[MOTORS];// motor control port
+enum tgPWMnum {				// define motor numbers and array indexes
+		PWM_1 = 0,
+		PWM_2
 };
-struct deviceSingleton device;
 
-/* TinyG return codes
- * The following return codes are unified for various TinyG functions.
- * The first codes (up to the line) are aligned with the XIO codes.
+
+/* TinyG status codes
+ * The first code range (0-19) is aligned with the XIO codes and must be so.
  * Please don't change them without checking the corresponding values in xio.h
- * If you mess with this be sure to change the print strings in 
- * tg_print_status found in controller.c
+ *
+ * Any changes to the ranges also require changing the message strings and 
+ * string array in controller.c
  */
+ 
+// OS, communications and low-level status (must align with XIO_xxxx codes in xio.h)
+#define	TG_OK 0							// function completed OK
+#define	TG_ERROR 1						// generic error return (EPERM)
+#define	TG_EAGAIN 2						// function would block here (call again)
+#define	TG_NOOP 3						// function had no-operation
+#define	TG_COMPLETE 4					// operation is complete
+#define TG_TERMINATE 5					// operation terminated (gracefully)
+#define TG_ABORT 6						// operaation aborted
+#define	TG_EOL 7						// function returned end-of-line
+#define	TG_EOF 8						// function returned end-of-file 
+#define	TG_FILE_NOT_OPEN 9
+#define	TG_FILE_SIZE_EXCEEDED 10
+#define	TG_NO_SUCH_DEVICE 11
+#define	TG_BUFFER_EMPTY 12
+#define	TG_BUFFER_FULL_FATAL 13 
+#define	TG_BUFFER_FULL_NON_FATAL 14		// NOTE: XIO codes align to here
+#define	TG_ERROR_15 15
+#define	TG_ERROR_16 16
+#define	TG_ERROR_17 17
+#define	TG_ERROR_18 18
+#define	TG_ERROR_19 19
 
-//----- codes must align with xio.h and tg_print_status strings...
-enum tgCodes {
-	TG_OK = 0,					// function completed OK
-	TG_ERROR,					// generic error return (EPERM)
-	TG_EAGAIN,					// function would block here (call again)
-	TG_NOOP,					// function had no-operation
-	TG_COMPLETE,				// operation is complete
-	TG_EOL,						// function returned end-of-line
-	TG_EOF,						// function returned end-of-file 
-	TG_FILE_NOT_OPEN,
-	TG_FILE_SIZE_EXCEEDED,
-	TG_NO_SUCH_DEVICE,
-	TG_BUFFER_EMPTY,
-	TG_BUFFER_FULL_FATAL, 
-	TG_BUFFER_FULL_NON_FATAL,
-//----- ...to here				// XIO codes only run to here
-    TG_QUIT,					// QUIT current mode
-	TG_UNRECOGNIZED_COMMAND,	// parser didn't recognize the command
-	TG_RANGE_ERROR,				// number is out-of-range
-	TG_EXPECTED_COMMAND_LETTER,	// malformed line to parser
-	TG_JSON_SYNTAX_ERROR,		// JSON string is not well formed
-	TG_INPUT_EXCEEDS_MAX_LENGTH,// input string is too long
-	TG_OUTPUT_EXCEEDS_MAX_LENGTH,// output string is too long
-	TG_INTERNAL_ERROR,			// an internal error occurred
-	TG_BAD_NUMBER_FORMAT,		// number format error
-	TG_FLOATING_POINT_ERROR,	// number conversion error
-	TG_ARC_SPECIFICATION_ERROR,	// arc specification error
-	TG_ZERO_LENGTH_MOVE,		// move is zero length
-	TG_GCODE_BLOCK_SKIPPED,		// block is too short - was skipped
-	TG_GCODE_INPUT_ERROR,		// general error for gcode input 
-	TG_GCODE_FEEDRATE_ERROR,	// move has no feedrate
-	TG_GCODE_AXIS_WORD_MISSING,	// command requires at least one axis present
-	TG_MODAL_GROUP_VIOLATION,	// gcode modal group error
-	TG_HOMING_CYCLE_FAILED,		// homing cycle did not complete
-	TG_MAX_TRAVEL_EXCEEDED,
-	TG_MAX_SPINDLE_SPEED_EXCEEDED,
-};
+// Internal errors and startup messages
+#define	TG_INTERNAL_ERROR 20			// unrecoverable internal error
+#define	TG_INTERNAL_RANGE_ERROR 21		// number range other than by user input
+#define	TG_FLOATING_POINT_ERROR 22		// number conversion error
+#define	TG_DIVIDE_BY_ZERO 23
+#define	TG_ERROR_24 24
+#define	TG_ERROR_25 25
+#define	TG_ERROR_26 26
+#define	TG_ERROR_27 27
+#define	TG_ERROR_28 28
+#define	TG_ERROR_29 29
+#define	TG_ERROR_30 30
+#define	TG_ERROR_31 31
+#define	TG_ERROR_32 32
+#define	TG_ERROR_33 33
+#define	TG_ERROR_34 34
+#define	TG_ERROR_35 35
+#define	TG_ERROR_36 36
+#define	TG_ERROR_37 37
+#define	TG_ERROR_38 38
+#define	TG_ERROR_39 39
+
+// Input errors (400's, if you will)
+#define	TG_UNRECOGNIZED_COMMAND 40		// parser didn't recognize the command
+#define	TG_EXPECTED_COMMAND_LETTER 41	// malformed line to parser
+#define	TG_BAD_NUMBER_FORMAT 42			// number format error
+#define	TG_INPUT_EXCEEDS_MAX_LENGTH 43	// input string is too long 
+#define	TG_INPUT_VALUE_TOO_SMALL 44		// input error: value is under minimum
+#define	TG_INPUT_VALUE_TOO_LARGE 45		// input error: value is over maximum
+#define	TG_INPUT_VALUE_RANGE_ERROR 46	// input error: value is out-of-range
+#define	TG_INPUT_VALUE_UNSUPPORTED 47	// input error: value is not supported
+#define	TG_JSON_SYNTAX_ERROR 48			// JSON string is not well formed
+#define	TG_JSON_TOO_MANY_PAIRS 49		// JSON string or has too many JSON pairs
+#define	TG_NO_BUFFER_SPACE 50			// Buffer pool is full and cannot perform this operation
+#define	TG_ERROR_51 51
+#define	TG_ERROR_52 52
+#define	TG_ERROR_53 53
+#define	TG_ERROR_54 54
+#define	TG_ERROR_55 55
+#define	TG_ERROR_56 56
+#define	TG_ERROR_57 57
+#define	TG_ERROR_58 58
+#define	TG_ERROR_59 59
+
+// Gcode and machining errors
+#define	TG_ZERO_LENGTH_MOVE 60			// move is zero length
+#define	TG_GCODE_BLOCK_SKIPPED 61		// block is too short - was skipped
+#define	TG_GCODE_INPUT_ERROR 62			// general error for gcode input 
+#define	TG_GCODE_FEEDRATE_ERROR 63		// move has no feedrate
+#define	TG_GCODE_AXIS_WORD_MISSING 64	// command requires at least one axis present
+#define	TG_MODAL_GROUP_VIOLATION 65		// gcode modal group error
+#define	TG_HOMING_CYCLE_FAILED 66		// homing cycle did not complete
+#define	TG_MAX_TRAVEL_EXCEEDED 67
+#define	TG_MAX_SPINDLE_SPEED_EXCEEDED 68
+#define	TG_ARC_SPECIFICATION_ERROR 69	// arc specification error
+
 
 /* Version value and strings */
 
@@ -171,8 +204,8 @@ enum tgCodes {
 //#define TINYG_VERSION_NAME	  	"Daisy Dukes"
 //#define TINYG_VERSION_NAME	  	"Elastic Belt"
 //#define TINYG_VERSION_NAME	  	"Fanny Pack"
-#define TINYG_VERSION_NAME	  	"GoGo Boots"
-//#define TINYG_VERSION_NAME	  	"Hoodie"
+//#define TINYG_VERSION_NAME	  	"GoGo Boots"
+#define TINYG_VERSION_NAME	  	"Hoodie"
 //#define TINYG_VERSION_NAME	  	"Ironic Hipster Fashion"
 //#define TINYG_VERSION_NAME	  	"Jumpsuit"
 //#define TINYG_VERSION_NAME	  	"Kulats"

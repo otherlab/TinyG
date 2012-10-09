@@ -71,7 +71,7 @@ enum mpBufferState {			// bf->buffer_state values
 };
 
 struct mpBuffer {				// See Planning Velocity Notes for variable usage
-	uint32_t linenum;			// line number; or block count if not numbered
+	uint32_t linenum;			// runtime line number; or block count if not numbered
 	struct mpBuffer *pv;		// static pointer to previous buffer
 	struct mpBuffer *nx;		// static pointer to next buffer
 	uint8_t buffer_state;		// used to manage queueing/dequeueing
@@ -114,7 +114,7 @@ struct mpBufferPool {			// ring buffer for sub-moves
 };
 
 struct mpMoveMasterSingleton {	// common variables for planning (move master)
-	uint32_t linenum;			// line/block number of BF being planned
+	uint32_t linenum;			// runtime line/block number of BF being planned
 	double position[AXES];		// final move position for planning purposes
 #ifdef __UNIT_TEST_PLANNER
 	double test_case;
@@ -125,7 +125,7 @@ struct mpMoveMasterSingleton {	// common variables for planning (move master)
 };
 
 struct mpMoveRuntimeSingleton {	// persistent runtime variables
-	uint32_t linenum;			// line/block number of BF being executed
+	uint32_t linenum;			// runtime line/block number of BF being executed
 //	uint8_t (*run_move)(struct mpBuffer *m); // currently running move - left in for reference
 	uint8_t move_state;			// state of the overall move
 	uint8_t section_state;		// state within a move section
@@ -520,8 +520,7 @@ static uint8_t _exec_line(mpBuf *bf)
 	}
 	mr.microseconds = uSec(bf->time);
 	(void)ik_kinematics(travel, steps, mr.microseconds);
-//	if (st_prep_line(steps, mr.microseconds) == TG_OK) {
-	if (st_prep_line(steps, mr.microseconds, bf->cruise_vmax) == TG_OK) {
+	if (st_prep_line(steps, mr.microseconds) == TG_OK) {
 		copy_axis_vector(mr.position, bf->target);	// update runtime position
 	}
 	_free_run_buffer();
@@ -561,7 +560,7 @@ uint8_t mp_aline(const double target[], const double minutes)
 	if ((bf = _get_write_buffer()) == NULL) {	// get buffer or die trying
 		return (TG_BUFFER_FULL_FATAL);			// (not supposed to fail)
 	}
-	bf->linenum = cm_get_linenum();
+	bf->linenum = cm_get_model_linenum();
 	mm.linenum = bf->linenum;					// block being planned
 
 	bf->time = minutes;
@@ -913,7 +912,7 @@ static void _calculate_trapezoid(mpBuf *bf)
 }
 
 /*	
- * _get_target_length()		- derive accel/decl length from delta V and jerk
+ * _get_target_length()		- derive accel/decel length from delta V and jerk
  * _get_target_velocity()	- derive velocity achievable from delta V and length
  *
  *	This set of functions returns the fourth thing knowing the other three.
@@ -1020,7 +1019,7 @@ static double _get_junction_vmax(const double a_unit[], const double b_unit[])
  *	move into account. It allows the radius of curvature to vary by axis.
  *	This is necessary to support axes that have different dynamics; such 
  *	as a Z axis that doesn't move as fast as X and Y (such as a screw driven 
- *	Z axis on machine with a belt driven XY - like a makerbot), or rotary 
+ *	Z axis on machine with a belt driven XY - like a Shapeoko), or rotary 
  *	axes ABC that have completely different dynamics than their linear 
  *	counterparts.
  *
@@ -1059,8 +1058,8 @@ static double _get_junction_deviation(const double a_unit[], const double b_unit
  */
 /*	Holds work like this:
  * 
- * 	  - Hold is asserted by calling cm_feedhold() (usually invoked via a !)
- *		If hold_state is OFF and motion_state is RUNing it sets 
+ * 	  - Hold is asserted by calling cm_feedhold() (usually invoked via a ! char)
+ *		If hold_state is OFF and motion_state is RUNning it sets 
  *		hold_state to SYNC and motion_state to HOLD.
  *
  *	  - Hold state == SYNC tells the aline exec routine to execute the next aline 
@@ -1074,15 +1073,15 @@ static double _get_junction_deviation(const double a_unit[], const double b_unit
  *		back up from zero. Hold state is set to DECEL when planning is complete.
  *
  *	  - Hold state == DECEL persists until the aline execution gets runs to 
- *		zro velocity, at which point hold state transitions to HOLD.
+ *		zero velocity, at which point hold state transitions to HOLD.
  *
  *	  - Hold state == HOLD persists until the cycle is restarted. A cycle start 
  *		is an asynchronous event that sets the cycle_start_flag TRUE. It can 
- *		occur, any time after the hold is request - either before or after 
+ *		occur any time after the hold is requested - either before or after 
  *		motion stops.
  *
  *	  - mp_end_hold_callback() will execute once the hold state == HOLD and 
- *		cycle_start_flag == TRUE. This sets the hold state to OFF whihc enables
+ *		cycle_start_flag == TRUE. This sets the hold state to OFF which enables
  *		_exec_aline() to continue processing. Move execution begins with the 
  *		first buffer after the hold.
  *
@@ -1120,8 +1119,6 @@ uint8_t mp_plan_hold_callback()
 	braking_velocity = mr.segment_velocity;
 	braking_length = _get_target_length(braking_velocity, 0, bp); // bp is OK to use here
 
-//	fprintf_P(stderr,PSTR("***plan_hold(0)*** [%d] b:%f a:%f v:%f\n"),_get_buffer_index(bp),braking_length,mr_available_length,braking_velocity);
-
 	// Case 1: deceleration fits entirely in mr
 	if (braking_length <= mr_available_length) {
 		// set mr to a tail to perform the deceleration
@@ -1136,8 +1133,6 @@ uint8_t mp_plan_hold_callback()
 		bp->delta_vmax = _get_target_velocity(0, bp->length, bp);
 		bp->entry_vmax = 0;						// set bp+0 as hold point
 		bp->move_state = MOVE_STATE_NEW;		// tell _exec to re-use the bf buffer
-
-//		fprintf_P(stderr,PSTR("***plan_hold(1)*** [%d] L:%f b:%f v:%f\n"),_get_buffer_index(bp), bp->length, braking_length, braking_velocity);
 
 		_reset_replannable_list();				// make it replan all the blocks
 		_plan_block_list(_get_last_buffer(), &mr_flag);
@@ -1159,7 +1154,6 @@ uint8_t mp_plan_hold_callback()
 	for (uint8_t i=0; i<PLANNER_BUFFER_POOL_SIZE; i++) {// a safety to avoid wraparound
 		_copy_buffer(bp, bp->nx);				// copy bp+1 into bp+0 (and onward...)
 		if (bp->move_type != MOVE_TYPE_ALINE) {	// skip any non-move buffers
-//			fprintf_P(stderr,PSTR("***plan_hold(2)*** [%d] L:%f b:%f v:%f\n"),_get_buffer_index(bp), bp->length, braking_length, braking_velocity);
 			bp = _get_next_buffer(bp);			// point to next buffer
 			continue;
 		}
@@ -1168,7 +1162,6 @@ uint8_t mp_plan_hold_callback()
 		if (braking_length > bp->length) {		// decel does not fit in bp buffer
 			bp->exit_vmax = braking_velocity - _get_target_velocity(0, bp->length, bp);
 			braking_velocity = bp->exit_vmax;	// braking velocity for next buffer
-//			fprintf_P(stderr,PSTR("***plan_hold(3)*** [%d] L:%f b:%f v:%f\n"),_get_buffer_index(bp), bp->length, braking_length, braking_velocity);
 			bp = _get_next_buffer(bp);			// point to next buffer
 			continue;
 		}
@@ -1183,8 +1176,6 @@ uint8_t mp_plan_hold_callback()
 	bp->length -= braking_length;				// the buffers were identical (and hence their lengths)
 	bp->delta_vmax = _get_target_velocity(0, bp->length, bp);
 	bp->exit_vmax = bp->delta_vmax;
-
-//	fprintf_P(stderr, PSTR("***plan_hold(4)*** [%d] L:%f v:%f\n"),_get_buffer_index(bp), bp->length, braking_velocity);
 
 	_reset_replannable_list();					// make it replan all the blocks
 	_plan_block_list(_get_last_buffer(), &mr_flag);
@@ -1501,8 +1492,7 @@ static uint8_t _exec_aline_segment(uint8_t correction_flag)
 	// prep the segment for the steppers and adjust the variables for the next iteration
 	(void)ik_kinematics(travel, steps, mr.microseconds);
 	SEGMENT_LOGGER				// conditional DEBUG statement
-//	if (st_prep_line(steps, mr.microseconds) == TG_OK) {
-	if (st_prep_line(steps, mr.microseconds, mr.segment_velocity) == TG_OK) {
+	if (st_prep_line(steps, mr.microseconds) == TG_OK) {
 		copy_axis_vector(mr.position, mr.target); 	// update runtime position	
 	}
 	mr.elapsed_accel_time += mr.segment_accel_time; // NB: ignored if running the body

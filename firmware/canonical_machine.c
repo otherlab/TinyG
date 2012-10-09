@@ -35,9 +35,8 @@
 /* See the wiki for module details and additional information:
  *	 http://www.synthetos.com/wiki/index.php?title=Projects:TinyG-Developer-Info
  */
-
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>				// needed for memcpy, memset
 #include <avr/pgmspace.h>		// needed for exception strings
@@ -90,7 +89,7 @@ uint8_t cm_get_path_control() { return gm.path_control;}
 uint8_t cm_get_distance_mode() { return gm.distance_mode;}
 uint8_t cm_get_inverse_feed_rate_mode() { return gm.inverse_feed_rate_mode;}
 uint8_t cm_get_spindle_mode() { return gm.spindle_mode;} 
-uint32_t cm_get_linenum() { return gm.linenum; }
+uint32_t cm_get_model_linenum() { return gm.linenum;}
 uint8_t cm_isbusy() { return (mp_isbusy());}
 
 // set parameter in gm struct
@@ -198,7 +197,7 @@ double cm_get_runtime_work_position(uint8_t axis)
  * cm_set_arc_offset()	- set all IJK offsets
  * cm_set_radius()	- set radius value
  * cm_set_absolute_override()
- * cm_set_linenum()
+ * cm_set_model_linenum() - set line number in the model (this is NOT the runtime line number)
  * cm_set_target()	- set all XYZABC targets
  */
 
@@ -214,7 +213,7 @@ void cm_set_arc_radius(double r)
 	gm.arc_radius = _to_millimeters(r);
 }
 
-void cm_set_linenum(uint32_t linenum)
+void cm_set_model_linenum(uint32_t linenum)
 {
 	if (linenum != 0) {
 		gm.linenum = linenum;
@@ -276,6 +275,7 @@ void cm_set_target(double target[], double flag[])
 			}
 //		} else if (i<A) {
 //			printf_P(stderr,PSTR("%c axis using unsupported axis mode"), cfg_get_configuration_group_char(i));
+//			cmd_add_string("msg", msg);
 		}
 	}
 	// FYI: The ABC loop below relies on the XYZ loop having been run first
@@ -507,7 +507,7 @@ uint8_t	cm_set_coord_system(uint8_t coord_system)
 uint8_t	cm_set_coord_offsets(uint8_t coord_system, double offset[], double flag[])
 {
 	if ((coord_system < G54) || (coord_system > COORD_SYSTEM_MAX)) { // you can't set G53
-		return (TG_RANGE_ERROR);
+		return (TG_INTERNAL_RANGE_ERROR);
 	}
 	for (uint8_t i=0; i<AXES; i++) {
 		if (flag[i] > EPSILON) {
@@ -755,7 +755,7 @@ void cm_comment(char *comment)
 
 void cm_message(char *message)
 {
-	printf_P(PSTR("%s\n"), message);
+	cmd_add_string("msg", message);		// adds the message to the response object
 }
 
 /*

@@ -16,6 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #ifndef report_h
@@ -25,9 +33,8 @@ void rpt_init_status_report(uint8_t persist_flag);
 void rpt_decr_status_report(void);
 void rpt_queue_status_report(void);
 uint8_t rpt_status_report_callback(void);
-void rpt_run_status_report(void);
 void rpt_run_multiline_status_report(void);
-void rpt_run_json_status_report(void);
+uint8_t rpt_populate_status_report(void);
 
 // If you are looking for the defaults for the status report see config.h
 

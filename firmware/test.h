@@ -11,11 +11,19 @@
  *
  * TinyG is distributed in the hope that it will be useful, but 
  * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
  * See the GNU General Public License for details.
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #ifndef test_h
 #define test_h
@@ -24,55 +32,6 @@
 
 uint8_t tg_test(cmdObj *cmd);
 void tg_canned_startup(void);
-
-
-/***** INFO trap support ******
- *
- *	INFO traps are exception statements that can be enabled or disabled.
- *
- *	All INFOs are enabled if __INFO is defined (see tinyg.h runtime settings)
- *	INFOs are coded so they occupy no RAM or program space if not enabled.
- *	Format strings should be in program memory, so use the PSTR macro.
- *	A closing semicolon is not required but is recommended for style.
- *
- *	INFO usage examples:
- *		INFO(PSTR("Line length is too short"));
- *		INFO1(PSTR("Line length is too short: %f"), m->length);
- *		INFO2(PSTR("Line length failed division: %f / %f"), m->length, m->divisor);
- */
-#ifdef __INFO 	// Note: __INFO is defined in tinyg.h as a runtime setting
-
-#define INFO(msg) { fprintf_P(stderr,PSTR("#### INFO #### ")); \
-					fprintf_P(stderr,msg); \
-					fprintf_P(stderr,PSTR("\n")); \
-				  }
-
-#define INFO1(msg,a) { fprintf_P(stderr,PSTR("#### INFO #### ")); \
-					  fprintf_P(stderr,msg,a); \
-					  fprintf_P(stderr,PSTR("\n")); \
-					}
-
-#define INFO2(msg,a,b) { fprintf_P(stderr,PSTR("#### INFO #### ")); \
-						 fprintf_P(stderr,msg,a,b); \
-						 fprintf_P(stderr,PSTR("\n")); \
-					   }
-
-#define INFO3(msg,a,b,c) { fprintf_P(stderr,PSTR("#### INFO #### ")); \
-						   fprintf_P(stderr,msg,a,b,c); \
-						   fprintf_P(stderr,PSTR("\n")); \
-						 }
-
-#define INFO4(msg,a,b,c,d) { fprintf_P(stderr,PSTR("#### INFO #### ")); \
-						 	 fprintf_P(stderr,msg,a,b,c,d); \
-						 	 fprintf_P(stderr,PSTR("\n")); \
-						   }
-#else
-#define INFO(msg)
-#define INFO1(msg,a)
-#define INFO2(msg,a,b)
-#define INFO3(msg,a,b,c)
-#define INFO4(msg,a,b,c,d)
-#endif	// __INFO
 
 /***** DEBUG support ******
  *

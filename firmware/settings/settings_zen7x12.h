@@ -2,7 +2,7 @@
  * settings_zen7x12.h - Zen Toolworks 7x12 machine profile
  * Part of TinyG project
  *
- * Copyright (c) 2011 Alden S. Hart Jr.
+ * Copyright (c) 2011 - 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -16,6 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /* Note: The values in this file are the default settings that are loaded
  * 		 into a virgin EEPROM, and can be changed using the config commands.
@@ -31,11 +39,13 @@
 /***********************************************************************/
 
 #define TINYG_CONFIGURATION_PROFILE "Zen Toolworks 7x12" // displays base config profile
-#define INIT_CONFIGURATION_MESSAGE "\n#### Initializing configs to Zen Toolworks 7x12 profile ####\n"
+#define INIT_CONFIGURATION_MESSAGE "Initializing configs to Zen Toolworks 7x12 profile"
 
 // **** common settings - applied to all axes or motors ****
 
-#define JERK_MAX 			100000000	// yes, that's "100,000,000" mm/(min^3)
+#define JERK_MAX_LINEAR 			100000000	// yes, that's "100,000,000" mm/(min^3)
+#define JERK_MAX_ROTARY 			10000000000	// yes, that's "10 billion" mm/(min^3)
+
 #define JUNCTION_DEVIATION	0.05		// default value, in mm
 
 // **** system settings ****
@@ -50,13 +60,14 @@
 #define GCODE_DEFAULT_PATH_CONTROL 	PATH_CONTINUOUS
 #define GCODE_DEFAULT_DISTANCE_MODE ABSOLUTE_MODE
 
-#define COM_APPEND_TX_CR			FALSE
+#define COM_APPEND_TX_CR			false
 #define COM_IGNORE_CRLF				IGNORE_OFF		// 0=accept either CR or LF, 1=ignore CR, 2=ignoreLF
-#define COM_ENABLE_ECHO				TRUE
-#define COM_ENABLE_XON				TRUE
-#define COM_ENABLE_HASHCODE			TRUE
+#define COM_ENABLE_ECHO				true
+#define COM_ENABLE_XON				true
+#define COM_COMMUNICATIONS_MODE		TG_JSON_MODE
+//#define COM_COMMUNICATIONS_MODE		TG_TEXT_MODE
 
-#define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
+//#define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
 
 // *** motor settings ***
 
@@ -86,7 +97,7 @@
 #define M4_TRAVEL_PER_REV 360			// degrees per motor rev - 1:1 gearing
 #define M4_MICROSTEPS 8
 #define M4_POLARITY 0
-#define M4_POWER_MODE 0
+#define M4_POWER_MODE 1
 
 // *** axis settings ***
 
@@ -94,7 +105,7 @@
 #define X_VELOCITY_MAX 600 				// xvm		G0 max velocity in mm/min
 #define X_FEEDRATE_MAX X_VELOCITY_MAX	// xfr 		G1 max feed rate in mm/min
 #define X_TRAVEL_MAX 475				// travel between switches or crashes
-#define X_JERK_MAX JERK_MAX				// xjm
+#define X_JERK_MAX JERK_MAX_LINEAR			// xjm
 #define X_JUNCTION_DEVIATION JUNCTION_DEVIATION	 // xjd
 #define X_SWITCH_MODE 1					// xsm		1=switches enabled for homing only
 #define X_SEARCH_VELOCITY -500			// xsv		move in negative direction
@@ -106,7 +117,7 @@
 #define Y_VELOCITY_MAX 600
 #define Y_FEEDRATE_MAX Y_VELOCITY_MAX
 #define Y_TRAVEL_MAX 200
-#define Y_JERK_MAX JERK_MAX
+#define Y_JERK_MAX JERK_MAX_LINEAR
 #define Y_JUNCTION_DEVIATION JUNCTION_DEVIATION
 #define Y_SWITCH_MODE 1
 #define Y_SEARCH_VELOCITY -500
@@ -118,50 +129,50 @@
 #define Z_VELOCITY_MAX 500
 #define Z_FEEDRATE_MAX Z_VELOCITY_MAX
 #define Z_TRAVEL_MAX 75
-#define Z_JERK_MAX JERK_MAX
+#define Z_JERK_MAX JERK_MAX_LINEAR
 #define Z_JUNCTION_DEVIATION JUNCTION_DEVIATION
 #define Z_SWITCH_MODE 1
-#define Z_SEARCH_VELOCITY -400
+#define Z_SEARCH_VELOCITY 400
 #define Z_LATCH_VELOCITY 100
 #define Z_LATCH_BACKOFF 2
 #define Z_ZERO_BACKOFF 1
 
 #define A_AXIS_MODE AXIS_STANDARD
-#define A_VELOCITY_MAX 3600
+#define A_VELOCITY_MAX 144000			// 360 degrees * 400 RPM
 #define A_FEEDRATE_MAX A_VELOCITY_MAX
 #define A_TRAVEL_MAX -1
-#define A_JERK_MAX JERK_MAX
+#define A_JERK_MAX JERK_MAX_ROTARY
 #define A_JUNCTION_DEVIATION JUNCTION_DEVIATION
 #define A_RADIUS 1
 #define A_SWITCH_MODE 1
-#define A_SEARCH_VELOCITY -600
-#define A_LATCH_VELOCITY 100
+#define A_SEARCH_VELOCITY 72000
+#define A_LATCH_VELOCITY 360
 #define A_LATCH_BACKOFF -5
 #define A_ZERO_BACKOFF 2
 
 #define B_AXIS_MODE AXIS_DISABLED
-#define B_VELOCITY_MAX 3600
+#define B_VELOCITY_MAX 144000
 #define B_FEEDRATE_MAX B_VELOCITY_MAX
 #define B_TRAVEL_MAX -1
-#define B_JERK_MAX JERK_MAX
+#define B_JERK_MAX JERK_MAX_ROTARY
 #define B_JUNCTION_DEVIATION JUNCTION_DEVIATION
 #define B_RADIUS 1
 #define B_SWITCH_MODE 1
-#define B_SEARCH_VELOCITY -600
-#define B_LATCH_VELOCITY 100
+#define B_SEARCH_VELOCITY 72000
+#define B_LATCH_VELOCITY 360
 #define B_LATCH_BACKOFF -5
 #define B_ZERO_BACKOFF 2
 
 #define C_AXIS_MODE AXIS_DISABLED
-#define C_VELOCITY_MAX 3600
+#define C_VELOCITY_MAX 144000
 #define C_FEEDRATE_MAX C_VELOCITY_MAX
 #define C_TRAVEL_MAX -1
-#define C_JERK_MAX JERK_MAX
+#define C_JERK_MAX JERK_MAX_ROTARY
 #define C_JUNCTION_DEVIATION JUNCTION_DEVIATION
 #define C_RADIUS 1
 #define C_SWITCH_MODE 1
-#define C_SEARCH_VELOCITY -600
-#define C_LATCH_VELOCITY 100
+#define C_SEARCH_VELOCITY 72000
+#define C_LATCH_VELOCITY 360
 #define C_LATCH_BACKOFF -5
 #define C_ZERO_BACKOFF 2
 

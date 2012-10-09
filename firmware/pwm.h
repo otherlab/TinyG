@@ -1,8 +1,8 @@
 /*
- * kinematics.h - inverse kinematics routines
+ * pwm.h - pulse width modulation drivers
  * Part of TinyG project
  *
- * Copyright (c) 2011 - 2012 Alden S. Hart Jr.
+ * Copyright (c) 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -25,25 +25,22 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/*
- * At some point this whole thing ought to be renamed as the line buffer,
- * segment buffer, motor buffer, motor command buffer, joint buffer, or 
- * something that's more descriptive and not in conflict with the 
- * upper-level move buffer used by the planner.
- */
 
-#ifndef kinematics_h
-#define kinematics_h 
+#ifndef pwm_h
+#define pwm_h
 
-/*
- * Global Scope Functions
- */
+void pwm_init(void);
+uint8_t pwm_set_freq(uint8_t channel, double freq);
+uint8_t pwm_set_duty(uint8_t channel, double duty);
 
-uint8_t ik_kinematics(double travel[], double steps[], double microseconds);
 
-//#ifdef __UNIT_TESTS
-//void ik_unit_tests(void);
-//#endif
+//#define __UNIT_TEST_PWM		// uncomment to enable PWM unit tests
+#ifdef __UNIT_TEST_PWM
+void pwm_unit_tests(void);
 
+#define	PWM_UNITS pwm_unit_tests();
+#else
+#define	PWM_UNITS
 #endif
 
+#endif

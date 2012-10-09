@@ -2,7 +2,7 @@
  * xio.h - Xmega IO devices - common header file
  * Part of TinyG project
  *
- * Copyright (c) 2010 - 2011 Alden S. Hart Jr.
+ * Copyright (c) 2010 - 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -16,6 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /* XIO devices are compatible with avr-gcc stdio, so formatted printing 
  * is supported. To use this sub-system outside of TinyG you may need 
@@ -68,6 +76,8 @@ enum xioCodes {
 	XIO_EAGAIN,				// function would block here (must be called again)
 	XIO_NOOP,				// function had no-operation	
 	XIO_COMPLETE,			// operation complete
+	XIO_TERMINATE,			// operation terminated (gracefully)
+	XIO_ABORT,				// operation aborted
 	XIO_EOL,				// function returned end-of-line
 	XIO_EOF,				// function returned end-of-file 
 	XIO_FILE_NOT_OPEN,		// file is not open

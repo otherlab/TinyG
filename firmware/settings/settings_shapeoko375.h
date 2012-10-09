@@ -37,7 +37,7 @@
 /***********************************************************************/
 
 #define TINYG_CONFIGURATION_PROFILE "Shapeoko 375mm"	// displays base config profile
-#define INIT_CONFIGURATION_MESSAGE "\n#### Initializing configs to Shapeoko 375mm profile ####\n"
+#define INIT_CONFIGURATION_MESSAGE "Initializing configs to Shapeoko 375mm profile"
 
 // **** common settings - applied to all axes or motors ****
 
@@ -47,11 +47,7 @@
 
 #define JUNCTION_ACCELERATION 200000	// centripetal acceleration around corners
 
-<<<<<<< HEAD
 #define STATUS_REPORT_INTERVAL_MS	200	// in milliseconds
-=======
-#define STATUS_REPORT_INTERVAL_MS	0	// in milliseconds - 0=off
->>>>>>> edge
 
 #define GCODE_DEFAULT_PLANE			CANON_PLANE_XY
 #define GCODE_DEFAULT_UNITS			MILLIMETERS
@@ -59,13 +55,13 @@
 #define GCODE_DEFAULT_PATH_CONTROL 	PATH_CONTINUOUS
 #define GCODE_DEFAULT_DISTANCE_MODE ABSOLUTE_MODE
 
-#define COM_APPEND_TX_CR			FALSE
+#define COM_APPEND_TX_CR			false
 #define COM_IGNORE_CRLF				IGNORE_OFF		// 0=accept either CR or LF, 1=ignore CR, 2=ignoreLF
-#define COM_ENABLE_ECHO				TRUE
-#define COM_ENABLE_XON				TRUE
-#define COM_ENABLE_HASHCODE			TRUE
+#define COM_ENABLE_ECHO				true
+#define COM_ENABLE_XON				true
+#define COM_COMMUNICATIONS_MODE		TG_TEXT_MODE
 
-#define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
+//#define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
 
 // *** motor settings ***
 
@@ -105,7 +101,11 @@
 #define X_TRAVEL_MAX 170				// xtm		travel between switches or crashes
 #define X_JERK_MAX 5000000000			// xjm		yes, that's "5 billion" mm/(min^3)
 #define X_JUNCTION_DEVIATION JUNCTION_DEVIATION	 // xjd
-#define X_SWITCH_MODE 1					// xsm		1=switches enabled for homing only
+#define X_SWITCH_MODE 4					// xsm		0 = off
+										//			1 = NO homing only
+										//			2 = NO homing and limits
+										//			3 = NC homing only
+										//			4 = NC homing and limits
 #define X_SEARCH_VELOCITY -1000			// xsv		move in negative direction
 #define X_LATCH_VELOCITY 100			// xlv		mm/min
 #define X_LATCH_BACKOFF 2				// xlb		mm
@@ -117,7 +117,7 @@
 #define Y_TRAVEL_MAX 170
 #define Y_JERK_MAX 5000000000			// 5,000,000,000
 #define Y_JUNCTION_DEVIATION JUNCTION_DEVIATION
-#define Y_SWITCH_MODE 1
+#define Y_SWITCH_MODE 4
 #define Y_SEARCH_VELOCITY -1000
 #define Y_LATCH_VELOCITY 100
 #define Y_LATCH_BACKOFF 2
@@ -129,8 +129,8 @@
 #define Z_TRAVEL_MAX 50
 #define Z_JERK_MAX 50000000				// 50,000,000
 #define Z_JUNCTION_DEVIATION JUNCTION_DEVIATION
-#define Z_SWITCH_MODE 1
-#define Z_SEARCH_VELOCITY -400
+#define Z_SWITCH_MODE 4
+#define Z_SEARCH_VELOCITY 400
 #define Z_LATCH_VELOCITY 100
 #define Z_LATCH_BACKOFF 2
 #define Z_ZERO_BACKOFF 1
@@ -142,7 +142,7 @@
 #define A_JERK_MAX 20000000				//			20,000,000
 #define A_JUNCTION_DEVIATION JUNCTION_DEVIATION
 #define A_RADIUS 1
-#define A_SWITCH_MODE 1
+#define A_SWITCH_MODE 4
 #define A_SEARCH_VELOCITY -600
 #define A_LATCH_VELOCITY 100
 #define A_LATCH_BACKOFF -5

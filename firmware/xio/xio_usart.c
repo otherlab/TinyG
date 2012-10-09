@@ -4,7 +4,7 @@
  *
  * Part of TinyG project
  *
- * Copyright (c) 2010 - 2011 Alden S. Hart Jr.
+ * Copyright (c) 2010 - 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -18,6 +18,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * ---- Non-threadsafe code ----
  *
@@ -149,11 +157,21 @@ void xio_xon_usart(const uint8_t dev)
 }
 
 /*
- * xio_get_rx_bufcount_usart() - returns number of chars in RX buffer
  * xio_get_tx_bufcount_usart() - returns number of chars in TX buffer
+ * xio_get_rx_bufcount_usart() - returns number of chars in RX buffer
+ * xio_get_usb_rx_free() - returns free space in the USB RX buffer
  *
  *	Remember: The queues fill from top to bottom, w/0 being the wrap location
  */
+BUFFER_T xio_get_tx_bufcount_usart(const struct xioUSART *dx)
+{
+	if (dx->tx_buf_head <= dx->tx_buf_tail) {
+		return (dx->tx_buf_tail - dx->tx_buf_head);
+	} else {
+		return (TX_BUFFER_SIZE - (dx->tx_buf_head - dx->tx_buf_tail));
+	}
+}
+
 BUFFER_T xio_get_rx_bufcount_usart(const struct xioUSART *dx)
 {
 	if (dx->rx_buf_head <= dx->rx_buf_tail) {
@@ -163,14 +181,13 @@ BUFFER_T xio_get_rx_bufcount_usart(const struct xioUSART *dx)
 	}
 }
 
-BUFFER_T xio_get_tx_bufcount_usart(const struct xioUSART *dx)
+uint16_t xio_get_usb_rx_free(void)
 {
-	if (dx->tx_buf_head <= dx->tx_buf_tail) {
-		return (dx->tx_buf_tail - dx->tx_buf_head);
-	} else {
-		return (TX_BUFFER_SIZE - (dx->tx_buf_head - dx->tx_buf_tail));
-	}
+//	char c = USBu.usart->DATA;					// can only read DATA once
+
+	return (RX_BUFFER_SIZE - xio_get_rx_bufcount_usart(&USBu));
 }
+
 
 /* 
  * xio_putc_usart() - stdio compatible char writer for usart devices

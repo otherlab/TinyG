@@ -16,6 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /* Note: The values in this file are the default settings that are loaded
  * 		 into a virgin EEPROM, and can be changed using the config commands.
@@ -31,7 +39,7 @@
 /***********************************************************************/
 
 #define TINYG_CONFIGURATION_PROFILE "Probotix Fireball V90" // displays base config profile
-#define INIT_CONFIGURATION_MESSAGE "\n#### Initializing configs to Probotix Fireball V90 profile ####\n"
+#define INIT_CONFIGURATION_MESSAGE "Initializing configs to Probotix Fireball V90 profile"
 
 // **** common settings - applied to all axes or motors ****
 
@@ -42,11 +50,7 @@
 
 #define JUNCTION_ACCELERATION 200000	// centripetal acceleration around corners
 
-<<<<<<< HEAD
 #define STATUS_REPORT_INTERVAL_MS	200	// in milliseconds
-=======
-#define STATUS_REPORT_INTERVAL_MS	0	// in milliseconds - 0=off
->>>>>>> edge
 
 #define GCODE_DEFAULT_PLANE			CANON_PLANE_XY
 #define GCODE_DEFAULT_UNITS			MILLIMETERS
@@ -54,13 +58,13 @@
 #define GCODE_DEFAULT_PATH_CONTROL 	PATH_CONTINUOUS
 #define GCODE_DEFAULT_DISTANCE_MODE ABSOLUTE_MODE
 
-#define COM_APPEND_TX_CR			FALSE
+#define COM_APPEND_TX_CR			false
 #define COM_IGNORE_CRLF				IGNORE_OFF		// 0=accept either CR or LF, 1=ignore CR, 2=ignoreLF
-#define COM_ENABLE_ECHO				TRUE
-#define COM_ENABLE_XON				TRUE
-#define COM_ENABLE_HASHCODE			TRUE
+#define COM_ENABLE_ECHO				true
+#define COM_ENABLE_XON				true
+#define COM_COMMUNICATIONS_MODE		TG_TEXT_MODE
 
-#define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
+//#define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
 
 // *** motor settings ***
 

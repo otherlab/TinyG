@@ -4,7 +4,7 @@
  *
  * Part of TinyG project
  *
- * Copyright (c) 2010 - 2011 Alden S. Hart Jr.
+ * Copyright (c) 2010 - 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -18,6 +18,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  *------
  *
@@ -33,8 +41,8 @@
 #include "../xmega/xmega_interrupts.h"
 #include "../gpio.h"
 
-#define USB ds[XIO_DEV_USB]			// device struct accessor
-#define USBu us[XIO_DEV_USB_OFFSET]	// usart extended struct accessor
+//#define USB ds[XIO_DEV_USB]			// device struct accessor
+//#define USBu us[XIO_DEV_USB_OFFSET]	// usart extended struct accessor
 
 /* USB device wrappers for generic USART routines */
 FILE * xio_open_usb() {return(USB.fdev);}

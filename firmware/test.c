@@ -99,6 +99,16 @@ void tg_canned_startup()	// uncomment in tinyg.h if you want to run this
 {
 #ifdef __CANNED_STARTUP
 
+//	xio_queue_RX_string_usb("$h\n");
+//	xio_queue_RX_string_usb("$m\n");
+//	xio_queue_RX_string_usb("$$\n");
+//	xio_queue_RX_string_usb("?\n");
+//	xio_queue_RX_string_usb("$x\n");
+//	xio_queue_RX_string_usb("\n");
+
+//	xio_queue_RX_string_usb("g00xqwrsdfs\n");
+//	xio_queue_RX_string_usb("g0x10\n");
+
 //	xio_queue_RX_string_usb("g00g17g21g40g49g80g90\n");
 //	xio_queue_RX_string_usb("g2x0y0i1f2000\n");
 //	xio_queue_RX_string_usb("f3000\n");
@@ -209,7 +219,9 @@ void tg_canned_startup()	// uncomment in tinyg.h if you want to run this
 //	xio_queue_RX_string_usb("g92.3\n");
 
 /* G28 and G30 homing tests */
-//	xio_queue_RX_string_usb("g28x0y0z0\n");
+//	xio_queue_RX_string_usb("g28.1x0y0z0\n");
+//	xio_queue_RX_string_usb("g28.1x0y0z0a0\n");
+	xio_queue_RX_string_usb("g28.1 a0\n");
 //	xio_queue_RX_string_usb("g30x0y0z0\n");
 //	xio_queue_RX_string_usb("g30x42\n");
 
@@ -241,12 +253,16 @@ void tg_canned_startup()	// uncomment in tinyg.h if you want to run this
 
 /* JSON tests */
 // If you want to use all these you need to set RX buffer to 1024 in xio_usart.h
+//	xio_queue_RX_string_usb("{\"gc\":\"g0 x3 y4 z5.5 (comment line)\"}\n");
+//	xio_queue_RX_string_usb("{\"xfr\":1200}\n");
 //	xio_queue_RX_string_usb("{\"x_feedrate\":1200}\n");
 //	xio_queue_RX_string_usb("{\"xfr\":1200, \"yfr\":1201, \"zfr\":600}\n");
 //	xio_queue_RX_string_usb("{\"err_1\":36000}\n");
 //	xio_queue_RX_string_usb("{\"1sa\":3.6.000}\n");
+//	xio_queue_RX_string_usb("{\"sr\":\"\"}\n");				// invoke a status report
+//	xio_queue_RX_string_usb("{\"x\":{\"am\":2,\"vm\":601.000,\"fr\":1201.000,\"tm\":476.000,\"jm\":20000001.000,\"jd\":0.051,\"sm\":2,\"sv\":-502.000,\"lv\":101.000,\"lb\":2.001,\"zb\":1.001}}\n");
 
-	xio_queue_RX_string_usb("{\"gcode\":\"g0 x3 y4 z5.5 (comment line)\"}\n");
+//	xio_queue_RX_string_usb("{\"gc\":{\"sr\":{\"momo\":\"null\"},\"x\":0,\"y\":\"OK\",\"z\":123}}\n");
 /*	xio_queue_RX_string_usb("{\"config_version\":null}\n");	// simple null test
 	xio_queue_RX_string_usb("{\"config_profile\":true}\n");	// simple true test
 	xio_queue_RX_string_usb("{\"prompt\":false}\n");		// simple false test

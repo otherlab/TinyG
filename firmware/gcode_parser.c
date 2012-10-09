@@ -29,10 +29,10 @@
  */
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>				// needed for memcpy, memset
-#include <stdio.h>				// precursor for xio.h
 #include <avr/pgmspace.h>		// precursor for xio.h
 
 #include "tinyg.h"
@@ -295,7 +295,8 @@ static uint8_t _parse_gcode_block(char *buf)
 		}
 		if(status != TG_OK) break;
 	}
-	ritorno(_check_gcode_block());			// perform error checking
+	if ((status != TG_OK) && (status != TG_COMPLETE)) return (status);
+	ritorno(_check_gcode_block());			// perform Gcode error checking
 	return (_execute_gcode_block());		// if successful execute the block
 }
 
@@ -339,7 +340,7 @@ static uint8_t _execute_gcode_block()
 {
 	uint8_t status = TG_OK;
 
-	cm_set_linenum(gn.linenum);
+	cm_set_model_linenum(gn.linenum);
 	EXEC_FUNC(cm_set_inverse_feed_rate_mode, inverse_feed_rate_mode);
 	EXEC_FUNC(cm_set_feed_rate, feed_rate);
 	EXEC_FUNC(cm_set_spindle_speed, spindle_speed);

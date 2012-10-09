@@ -2,7 +2,7 @@
  * util.c - a random assortment of useful functions
  * Part of TinyG project
  *
- * Copyright (c) 2010 - 2011 Alden S. Hart Jr.
+ * Copyright (c) 2010 - 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -30,12 +30,12 @@
  *
  *	  - math and min/max utilities and extensions 
  *	  - vector manipulation utilities
- *	  - support for INFO traps
  *	  - support for debugging routines
  */  
 #include <ctype.h>
 #include <stdio.h>				// precursor for xio.h
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <string.h>
 #include <avr/pgmspace.h>		// precursor for xio.h

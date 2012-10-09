@@ -2,7 +2,7 @@
  * settings.h - default runtime settings
  * Part of TinyG project
  *
- * Copyright (c) 2010 - 2011 Alden S. Hart Jr.
+ * Copyright (c) 2010 - 2012 Alden S. Hart Jr.
  *
  * TinyG is free software: you can redistribute it and/or modify it 
  * under the terms of the GNU General Public License as published by 
@@ -16,6 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with TinyG  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /*	The values in this file are the default settings that are loaded into 
  *	a virgin EEPROM, and can be changed using the config commands.
@@ -37,12 +45,13 @@
 
 // default machine profiles - chose only one:
 
-//#include "settings/settings_default.h"				// Default settings for shipment
-#include "settings/settings_otherlab.h"				// Otherlab Othercutter R3.5
+//#include "settings/settings_default.h"			// Default settings for shipment
 //#include "settings/settings_zen7x12.h"			// Zen Toolworks 7x12
 //#include "settings/settings_shapeoko375.h"		// Shapeoko 375mm kit
+//#include "settings/settings_Ultimaker.h"			// Ultimaker 3D printer
 //#include "settings/settings_probotixV90.h"		// Probotix FireballV90
 //#include "settings/settings_lumenlabMicRoV3.h"	// Lumenlabs micRo v3
 //#include "settings/settings_sacidu93.h"			// related to Issue #12
+#include "settings/settings_otherlab.h"			// Othwrlab Cardboard cutter
 
 #endif

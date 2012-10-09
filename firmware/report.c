@@ -44,8 +44,6 @@
 #include "xio/xio.h"
 #include "xmega/xmega_rtc.h"
 
-static void _run_csv_status_report();
-
 /*****************************************************************************
  * Status Reports
  *
@@ -53,8 +51,7 @@ static void _run_csv_status_report();
  *
  *	Configuration:
  *
- *		Status reports are configurable only from JSON. There is no way to set 
- *		the status report config from text mode or grbl mode. SRs are configured
+ *		Status reports are configurable only from JSON. SRs are configured
  *		by sending a status report SET object, e.g:
  *
  *		  {"sr":{"line":true,"posx":true,"posy":true....."motm":true,"stat":true}}
@@ -78,7 +75,7 @@ static void _run_csv_status_report();
  *	Status report invocation: Status reports can be invoked in the following ways:
  *
  *	  - Ad-hoc request in JSON mode. Issue {"sr":""} (or equivalent). Returns a 
- *		JSON format report.
+ *		JSON format report (wrapped in a response header, of course).
  *
  *	  - Automatic status reports in JSON mode. Returns JSON format reports 
  *		according to "si" setting.
@@ -89,7 +86,7 @@ static void _run_csv_status_report();
  *
  *	  - Automatic status reports in text mode return CSV format according to si setting
  *
- *	  - grbl mode forms are not yet defined.
+ *	  - grbl compatibility forms are not yet supported.
  */
 
 /* rpt_init_status_report()
@@ -123,10 +120,11 @@ void rpt_init_status_report(uint8_t persist_flag)
 	cm.status_report_counter = cfg.status_report_interval;
 }
 
-/*	rpt_decr_status_report()  - decrement status report counter
- *	rpt_queue_status_report() - force a status report to be sent on next callback
+/*	rpt_decr_status_report()  	 - decrement status report counter
+ *	rpt_queue_status_report() 	 - force a status report to be sent on next callback
  *	rpt_status_report_callback() - main loop callback to send a report if one is ready
- *	rpt_run_status_report()	  - actually send the status report
+ *	rpt_run_multiline_status_report() - generate a status report in multiline format
+ *	rpt_run_status_report()	  	 - populate cmdObj body with status values
  */
 void rpt_decr_status_report() 
 {
@@ -142,70 +140,37 @@ uint8_t rpt_status_report_callback() // called by controller dispatcher
 {
 	if ((cm.machine_state != MACHINE_RESET) && 
 		(cfg.status_report_interval > 0) && (cm.status_report_counter == 0)) {
-		rpt_run_status_report();
+		rpt_populate_status_report();
+		cmd_print_list(TG_OK, TEXT_INLINE_PAIRS);	// will report in JSON or inline text modes
 		cm.status_report_counter = (cfg.status_report_interval / RTC_PERIOD);	// RTC fires every 10 ms
 		return (TG_OK);
 	}
 	return (TG_NOOP);
 }
 
-void rpt_run_status_report()
-{
-	if (tg.communications_mode == TG_JSON_MODE) {
-		rpt_run_json_status_report();
-		js_make_json_string(cmd_array, tg.out_buf);
-		fprintf_P(stderr, PSTR("%s"), tg.out_buf);
-	} else {
-		_run_csv_status_report();
-	}
-}
-
-static void _run_csv_status_report() 		// single line status report
-{
-	cmdObj cmd;
-
-	for (uint8_t i=0; i<CMD_STATUS_REPORT_LEN; i++) {
-		cmd.index = cfg.status_report_spec[i];
-		if (cmd.index < 1) continue;		// trap 0 and -1 cases
-		if (i != 0) fprintf_P(stderr,PSTR(","));
-		cmd_get_cmd(&cmd);
-		if (cmd.value_type == VALUE_TYPE_FLOAT) {
-			fprintf_P(stderr,PSTR("%s:%1.3f"), cmd.token, cmd.value);
-		} else if (cmd.value_type == VALUE_TYPE_INTEGER) {
-			fprintf_P(stderr,PSTR("%s:%1.0f"), cmd.token, cmd.value);
-		} else if (cmd.value_type == VALUE_TYPE_STRING) {
-			fprintf_P(stderr,PSTR("%s:%s"), cmd.token, cmd.string_value);
-		}
-	}
-	fprintf_P(stderr,PSTR("\n"));
-}
-
 void rpt_run_multiline_status_report()		// multiple line status report
 {
-	cmdObj *cmd = cmd_array;
-	fprintf_P(stderr,PSTR("\n"));
-	for (uint8_t i=0; i<CMD_STATUS_REPORT_LEN; i++) {
-		cmd->index = cfg.status_report_spec[i];
-		if (cmd->index < 1) continue;		// trap 0 and -1 cases
-		cmd_print(cmd);
-	}
+	rpt_populate_status_report();
+	cmd_print_list(TG_OK, TEXT_MULTILINE_FORMATTED);
 }
 
-void rpt_run_json_status_report() 				// JSON status report
+uint8_t rpt_populate_status_report()
 {
-	cmdObj *cmd = cmd_array;
+	cmdObj *cmd = cmd_body;
 
-	cmd->value_type = VALUE_TYPE_PARENT; 		// setup the parent object
-	strcpy(cmd->token, "sr");
-	cmd++;
+	cmd_clear(cmd);							// wipe it first
+	cmd->type = TYPE_PARENT; 				// setup the parent object
+	sprintf_P(cmd->token, PSTR("sr"));
+//	strcpy(cmd->token, "sr");				// alternate form of above: more RAM, less FLASH & cycles
+	cmd = cmd->nx;
 
 	for (uint8_t i=0; i<CMD_STATUS_REPORT_LEN; i++) {
 		if ((cmd->index = cfg.status_report_spec[i]) == -1) { continue;}
 		if (cmd->index == 0) { break;}
-		cmd_get_cmd(cmd);
-		(cmd-1)->nx = cmd; // set the next object of the previous object to be this object
-		cmd++;
+		cmd_get_cmdObj(cmd);
+		cmd = cmd->nx;
 	}
+	return (TG_OK);
 }
 
 /****************************************************************************
