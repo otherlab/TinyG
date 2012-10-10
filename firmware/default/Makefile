@@ -45,8 +45,10 @@ OBJECTS = util.o arc.o canonical_machine.o config.o controller.o cycle_homing.o 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
 
+
 ## Build
 all: $(TARGET) tinyg.hex tinyg.eep tinyg.lss size
+
 
 ## Compile
 util.o: ../util.c
@@ -157,11 +159,15 @@ size: ${TARGET}
 	@avr-size ${TARGET}
 
 
-## Clean target
-.PHONY: clean
+
+## Clean target.PHONY: clean
+n
 clean:
 	-rm -rf $(OBJECTS) tinyg.elf dep/* tinyg.hex tinyg.eep tinyg.lss tinyg.map
 
+## Install
+install: tinyg.hex
+	avrdude -p x192a3 -c avrispmkII -P usb -Uflash:w:tinyg.hex
 
 ## Other dependencies
 -include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)
