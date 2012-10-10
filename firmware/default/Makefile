@@ -4,7 +4,7 @@
 
 ## General Flags
 PROJECT = tinyg
-MCU = atxmega256a3
+MCU = atxmega192a3
 TARGET = tinyg.elf
 CC = avr-gcc
 
@@ -166,7 +166,7 @@ clean:
 
 ## Install
 install: tinyg.hex
-	avrdude -p x192a3 -c avrispmkII -P usb -Uflash:w:tinyg.hex
+	avrdude -p x256a3 -c avrispmkII -P usb -Uflash:w:tinyg.hex
 
 ## Other dependencies
 -include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)

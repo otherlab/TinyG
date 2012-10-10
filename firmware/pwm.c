@@ -114,7 +114,7 @@ ISR(PWM2_ISR_vect)
  * pwm_set_freq() - set PWM channel frequency
  *
  *	channel	- PWM channel
- *	freq	- PWM frequency in Khz as a double
+ *	freq	- PWM frequency in Hz as a double
  *
  *	Assumes 32MHz clock.
  *	Doesn't turn time on until duty cycle is set
@@ -150,20 +150,24 @@ uint8_t pwm_set_freq(uint8_t chan, double freq)
  * pwm_set_duty() - set PWM channel duty cycle 
  *
  *	channel	- PWM channel
- *	duty	- PWM duty cycle from 0% to 100%
+ *	duty	- PWM duty cycle from [0..1]
  *
  *	Setting duty cycle to 0 disables the PWM channel with output low
- *	Setting duty cycle to 100 disables the PWM channel with output high
- *	Setting duty cycle between 0 and 100 enables PWM channel
+ *	Setting duty cycle to 1 disables the PWM channel with output high
+ *	Setting duty cycle between 0 and 1 enables PWM channel
  *
  *	The frequency must have been set previously
  */
 uint8_t pwm_set_duty(uint8_t chan, double duty)
 {
-	if (duty < 0)   { return (TG_INPUT_VALUE_TOO_SMALL);}
-	if (duty > 100) { return (TG_INPUT_VALUE_TOO_LARGE);}
+    if (duty < 0.0) { return (TG_INPUT_VALUE_TOO_SMALL);}
+    if (duty > 1.0) { return (TG_INPUT_VALUE_TOO_LARGE);}
+    
+// Ffrq = Fper/(2N(CCA+1))
+// Fpwm = Fper/((N(PER+1))
 
-	pwm[chan].timer->CCB = (uint16_t)(pwm[chan].timer->PER - pwm[chan].timer->PER / (duty/100));
+    double period_scalar = pwm[chan].timer->PER;
+	pwm[chan].timer->CCB = (uint16_t)(period_scalar * duty) + 1;
 	return (TG_OK);
 }
 
@@ -177,25 +181,25 @@ void pwm_unit_tests()
 {
 	pwm_init();
 
-	pwm_set_freq(PWM_1,500);
-	pwm_set_duty(PWM_1,100);
-	pwm_set_duty(PWM_1,75);
-	pwm_set_duty(PWM_1,51);
-	pwm_set_duty(PWM_1,10);
+	pwm_set_freq(PWM_1,500.0);
+	pwm_set_duty(PWM_1,1.0);
+	pwm_set_duty(PWM_1,.75);
+	pwm_set_duty(PWM_1,.50);
+	pwm_set_duty(PWM_1,.1);
 	pwm_set_duty(PWM_1,0);
 
-	pwm_set_freq(PWM_1,5000);
-	pwm_set_duty(PWM_1,100);
-	pwm_set_duty(PWM_1,75);
-	pwm_set_duty(PWM_1,51);
-	pwm_set_duty(PWM_1,10);
+	pwm_set_freq(PWM_1,5000.0);
+	pwm_set_duty(PWM_1,1.0);
+	pwm_set_duty(PWM_1,.75);
+	pwm_set_duty(PWM_1,.50);
+	pwm_set_duty(PWM_1,.1);
 	pwm_set_duty(PWM_1,0);
 
-	pwm_set_freq(PWM_1,100);
-	pwm_set_duty(PWM_1,100);
-	pwm_set_duty(PWM_1,75);
-	pwm_set_duty(PWM_1,51);
-	pwm_set_duty(PWM_1,10);
+	pwm_set_freq(PWM_1,100.0);
+	pwm_set_duty(PWM_1,1.0);
+	pwm_set_duty(PWM_1,.75);
+	pwm_set_duty(PWM_1,.50);
+	pwm_set_duty(PWM_1,.1);
 	pwm_set_duty(PWM_1,0);
 
 }

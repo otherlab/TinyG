@@ -32,13 +32,16 @@
 #include "spindle.h"
 #include "planner.h"
 #include "system.h"
+#include "pwm.h"
 
 /* 
  * sp_init()
  */
-
+#define SPINDLE_PWM_FREQ 100.0  // Hz
 void cm_spindle_init()
 {
+    pwm_set_freq(PWM_1, SPINDLE_PWM_FREQ);
+    pwm_set_duty(PWM_1, 0.1);   // keep alive for ESC
 	return;
 }
 
@@ -57,6 +60,20 @@ uint8_t cm_spindle_control(uint8_t spindle_mode)
 	return(TG_OK);
 }
 
+
+double cm_get_spindle_pwm( uint8_t spindle_mode )
+{
+    if (spindle_mode==SPINDLE_CW || spindle_mode==SPINDLE_CCW )
+    {
+        double microseconds = gm.spindle_speed;     // hi Alden! yes, this should be in RPM. need a spindle settings page in the eeprom...
+        if( microseconds < 1200 )   // minimum ESC turn on power
+            microseconds = 1200;
+        return ((microseconds-1000)/1000.0  * 0.1) + .1;   // range capped at 0.1-0.2
+    }
+    else
+        return 0.1; // minimum keep alive
+}
+
 /*
  * cm_exec_spindle_control() - execute the spindle command (called from planner)
  */
@@ -72,6 +89,9 @@ void cm_exec_spindle_control(uint8_t spindle_mode)
 	} else {
 		gpio_set_bit_off(SPINDLE_BIT);	// failsafe: any error causes stop
 	}
+    
+    // PWM spindle control
+    pwm_set_duty(PWM_1, cm_get_spindle_pwm(spindle_mode) );
 }
 
 /*
@@ -84,6 +104,10 @@ uint8_t cm_set_spindle_speed(double speed)
 //		return (TG_MAX_SPINDLE_SPEED_EXCEEDED);
 //	}
 	cm_set_spindle_speed_parameter(speed);
+    
+    // update spindle speed if we're running
+    pwm_set_duty(PWM_1, cm_get_spindle_pwm(gm.spindle_mode) );
+    
 	return (TG_OK);
 }
 
