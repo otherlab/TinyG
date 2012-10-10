@@ -144,8 +144,8 @@ struct cmdObject {					// depending on use, not all elements may be populated
 	char string[CMD_STRING_LEN+1];	// string storage (See note below)
 }; 									// OK, so it's not REALLY an object
 typedef struct cmdObject cmdObj;	// handy typedef for command onjects
-typedef uint8_t (*fptrCmd)(cmdObj *cmd);// required for cmd table access
-typedef void (*fptrPrint)(cmdObj *cmd);	// required for PROGMEM access
+typedef uint8_t (* const fptrCmd)(cmdObj *cmd);// required for cmd table access
+typedef void (* const fptrPrint)(cmdObj *cmd);	// required for PROGMEM access
 
 // NOTE: Be aware: the string field is mainly used to carry string values, 
 // but is used as temp storage for the friendly_name during parsing to save RAM..

@@ -299,31 +299,22 @@ void cm_set_target(double target[], double flag[])
 		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_Z) && (flag[Z] > EPSILON)) {
 			tmp = (target[Z] - gm.position[Z]) * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XY) && 
-			((flag[X] > EPSILON) || (flag[Y] > EPSILON))) {
-			length = sqrt(square(target[X] - gm.position[X]) + 
-						  square(target[Y] - gm.position[Y]));
+		} /*else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XY) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON))) {
+			length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XZ) && 
-			((flag[X] > EPSILON) || (flag[Z] > EPSILON))) {
-			length = sqrt(square(target[X] - gm.position[X]) + 
-						  square(target[Z] - gm.position[Z]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XZ) && ((flag[X] > EPSILON) || (flag[Z] > EPSILON))) {
+			length = sqrt(square(target[X] - gm.position[X]) + square(target[Z] - gm.position[Z]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_YZ) && 
-			((flag[Y] > EPSILON) || (flag[Z] > EPSILON))) {
-			length = sqrt(square(target[Y] - gm.position[Y]) + 
-						  square(target[Z] - gm.position[Z]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_YZ) && ((flag[Y] > EPSILON) || (flag[Z] > EPSILON))) {
+			length = sqrt(square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XYZ) && 
-			((flag[X] > EPSILON) || (flag[Y] > EPSILON) || (flag[Z] > EPSILON))) {
-			length = sqrt(square(target[X] - gm.position[X]) + 
-						  square(target[Y] - gm.position[Y]) +
-						  square(target[Z] - gm.position[Z]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XYZ) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON) || (flag[Z] > EPSILON))) {
+			length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
-		}
+		}*/
 		if (gm.distance_mode == ABSOLUTE_MODE) {
 			gm.target[i] = tmp;
 		} else {

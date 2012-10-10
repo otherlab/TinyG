@@ -27,6 +27,7 @@
 //#include <ctype.h>
 #include <stdio.h>
 #include <avr/pgmspace.h>
+#include <math.h>
 
 #include "tinyg.h"
 #include "util.h"

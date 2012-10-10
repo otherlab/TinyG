@@ -16,8 +16,6 @@
 
 #define TINYG_CONFIGURATION_PROFILE "Otherlab Cutter"	// displays base config profile
 
-
-#define TINYG_CONFIGURATION_PROFILE "Default Profile" // displays base config profile
 #define INIT_CONFIGURATION_MESSAGE "\n#### Initializing configs to Othercutter settings ####\n"
 
 // **** common settings - applied to all axes or motors ****
@@ -42,6 +40,8 @@
 #define COM_ENABLE_ECHO				TRUE
 #define COM_ENABLE_XON				TRUE
 #define COM_ENABLE_HASHCODE			TRUE
+
+#define COM_COMMUNICATIONS_MODE		TG_JSON_MODE
 
 #define ENABLE_ACCELERATION 1			// *** NOTE: this feature is disabled in 338.11 - always equal to 1 
 
@@ -96,9 +96,9 @@
 #define Y_JERK_MAX 						JERK_MAX
 #define Y_JUNCTION_DEVIATION 			JUNCTION_DEVIATION
 #define Y_SWITCH_MODE 					0			// Y-axis is infinite
-#define Y_SEARCH_VELOCITY 				-500
-#define Y_LATCH_VELOCITY 				100
-#define Y_LATCH_BACKOFF 				2
+#define Y_SEARCH_VELOCITY 				-1000
+#define Y_LATCH_VELOCITY 				1000
+#define Y_LATCH_BACKOFF 				1
 #define Y_ZERO_BACKOFF 					1
 
 #define Z_AXIS_MODE 					AXIS_STANDARD

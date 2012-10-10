@@ -61,6 +61,7 @@
  */
 
 #include <avr/interrupt.h>
+#include <math.h>
 
 #include "tinyg.h"
 #include "util.h"

@@ -36,6 +36,8 @@
 #ifndef util_h
 #define util_h
 
+#include <math.h>
+
 /****** Global Scope Variables and Functions ******/
 
 double vector[AXES];				// vector of axes for passing to subroutines
@@ -82,7 +84,9 @@ uint8_t errcode;
 #ifndef avg
 #define avg(a,b) ((a+b)/2)
 #endif
+#ifndef square
 #define square(a) ((a)*(a))
+#endif
 #define cube(a) ((a)*(a)*(a))
 #define cubert(a) pow((a), 0.33333333333333)
 

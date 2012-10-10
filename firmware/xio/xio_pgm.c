@@ -52,7 +52,7 @@ void xio_init_pgm()
  *  Returns a pointer to the stdio FILE struct or -1 on error
  */
 
-struct __file * xio_open_pgm(const prog_char *addr)
+struct __file * xio_open_pgm(const char *addr)
 {
 	PGM.flags &= XIO_FLAG_RESET_gm;	// reset flag signaling bits
 	PGM.signal = 0;					// reset signal
