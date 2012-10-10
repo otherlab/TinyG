@@ -161,7 +161,6 @@ size: ${TARGET}
 
 
 ## Clean target.PHONY: clean
-n
 clean:
 	-rm -rf $(OBJECTS) tinyg.elf dep/* tinyg.hex tinyg.eep tinyg.lss tinyg.map
 
