@@ -257,10 +257,55 @@ void cm_set_model_linenum(uint32_t linenum)
  *	All that flag checking in the slaves traps erroneous rotary inputs
  */
 
+// ESTEE: fix to workaround a gcc compiler bug wherein it runs out of spill registers
+// we move this block into its own function so that we get a fresh stack push
+double cm_calc_ABC( int i, double target[], double flag[] )
+{
+	double tmp = 0;
+    
+    if ((cfg.a[i].axis_mode == AXIS_STANDARD) || (cfg.a[i].axis_mode == AXIS_INHIBITED)) {
+        tmp = target[i];	// no mm conversion - it's in degrees
+
+    } else if ((cfg.a[i].axis_mode == AXIS_RADIUS) && (flag[i] > EPSILON)) {
+        tmp = _to_millimeters(target[i]) * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_X) && (flag[X] > EPSILON)) {
+        tmp = (target[X] - gm.position[X]) * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_Y) && (flag[Y] > EPSILON)) {
+        tmp = (target[Y] - gm.position[Y]) * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_Z) && (flag[Z] > EPSILON)) {
+        tmp = (target[Z] - gm.position[Z]) * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XY) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON)))
+    {
+        double length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]));
+        tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XZ) && ((flag[X] > EPSILON) || (flag[Z] > EPSILON)))
+    {
+        double length = sqrt(square(target[X] - gm.position[X]) + square(target[Z] - gm.position[Z]));
+        tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_YZ) && ((flag[Y] > EPSILON) || (flag[Z] > EPSILON)))
+    {
+        double length = sqrt(square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
+        tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
+
+    } else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XYZ) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON) || (flag[Z] > EPSILON)))
+    {
+        double length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
+        tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
+    }
+    
+    return tmp;
+}
+
+
 void cm_set_target(double target[], double flag[])
 { 
 	uint8_t i;
-	double length;
 	double tmp = 0;
 
 	// process XYZABC for lower modes
@@ -284,7 +329,7 @@ void cm_set_target(double target[], double flag[])
 		if ((flag[i] < EPSILON) || (cfg.a[i].axis_mode == AXIS_DISABLED)) {
 			continue;
 
-		} else if ((cfg.a[i].axis_mode == AXIS_STANDARD) || (cfg.a[i].axis_mode == AXIS_INHIBITED)) {
+		} else /*if ((cfg.a[i].axis_mode == AXIS_STANDARD) || (cfg.a[i].axis_mode == AXIS_INHIBITED)) {
 			tmp = target[i];	// no mm conversion - it's in degrees
 
 		} else if ((cfg.a[i].axis_mode == AXIS_RADIUS) && (flag[i] > EPSILON)) {
@@ -299,22 +344,28 @@ void cm_set_target(double target[], double flag[])
 		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_Z) && (flag[Z] > EPSILON)) {
 			tmp = (target[Z] - gm.position[Z]) * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} /*else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XY) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON))) {
-			length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XY) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON)))
+        {
+			double length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XZ) && ((flag[X] > EPSILON) || (flag[Z] > EPSILON))) {
-			length = sqrt(square(target[X] - gm.position[X]) + square(target[Z] - gm.position[Z]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XZ) && ((flag[X] > EPSILON) || (flag[Z] > EPSILON)))
+        {
+			double length = sqrt(square(target[X] - gm.position[X]) + square(target[Z] - gm.position[Z]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_YZ) && ((flag[Y] > EPSILON) || (flag[Z] > EPSILON))) {
-			length = sqrt(square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_YZ) && ((flag[Y] > EPSILON) || (flag[Z] > EPSILON)))
+        {
+			double length = sqrt(square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 
-		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XYZ) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON) || (flag[Z] > EPSILON))) {
-			length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
+		} else if ((cfg.a[i].axis_mode == AXIS_SLAVE_XYZ) && ((flag[X] > EPSILON) || (flag[Y] > EPSILON) || (flag[Z] > EPSILON)))
+        {
+			double length = sqrt(square(target[X] - gm.position[X]) + square(target[Y] - gm.position[Y]) + square(target[Z] - gm.position[Z]));
 			tmp = length * 360 / (2 * M_PI * cfg.a[i].radius);
 		}*/
+            tmp = cm_calc_ABC(i, target, flag);
+        
 		if (gm.distance_mode == ABSOLUTE_MODE) {
 			gm.target[i] = tmp;
 		} else {
