@@ -498,15 +498,15 @@ const char str_czb[] PROGMEM = "czb,c_z,[czb] c_zero_backoff%19.3f%S\n";
 
 
 const char str_pwmf[] PROGMEM =        "pwmf,p_f,[pwmf] pwm_frequency   %15.3fHz\n";
-const char str_p3sl[] PROGMEM =  "p3sl,p_cw_s_lo,[p3sl] pwm_cw_speed_lo %15.3f\n";
-const char str_p3sh[] PROGMEM =  "p3sh,p_cw_s_hi,[p3sh] pwm_cw_speed_hi %15.3f\n";
-const char str_p3pl[] PROGMEM =  "p3pl,p_cw_p_lo,[p3pl] pwm_cw_phase_lo           %4.3f\n";
-const char str_p3ph[] PROGMEM =  "p3ph,p_cw_p_hi,[p3ph] pwm_cw_phase_hi          %4.3f\n";
-const char str_p4sl[] PROGMEM = "p4sl,p_ccw_s_lo,[p4sl] pwm_ccw_speed_lo%15.3f\n";
-const char str_p4sh[] PROGMEM = "p4sh,p_ccw_s_hi,[p4sh] pwm_ccw_speed_hi%15.3f\n";
-const char str_p4pl[] PROGMEM = "p4pl,p_ccw_p_lo,[p4pl] pwm_ccw_phase_lo          %4.3f\n";
-const char str_p4ph[] PROGMEM = "p4ph,p_ccw_p_hi,[p4ph] pwm_ccw_phase_hi          %4.3f\n";
-const char str_p5of[] PROGMEM =      "p5of,p_off,[p5of] pwm_phase_off             %4.3f\n";
+const char str_p3sl[] PROGMEM =  "p3sl,p_cw_s_lo,[p3sl] pwm_cw_speed_lo %15.3fRPM\n";
+const char str_p3sh[] PROGMEM =  "p3sh,p_cw_s_hi,[p3sh] pwm_cw_speed_hi %15.3fRPM\n";
+const char str_p3pl[] PROGMEM =  "p3pl,p_cw_p_lo,[p3pl] pwm_cw_phase_lo          %4.3f [0..1]\n";
+const char str_p3ph[] PROGMEM =  "p3ph,p_cw_p_hi,[p3ph] pwm_cw_phase_hi          %4.3f [0..1]\n";
+const char str_p4sl[] PROGMEM = "p4sl,p_ccw_s_lo,[p4sl] pwm_ccw_speed_lo%15.3fRPM\n";
+const char str_p4sh[] PROGMEM = "p4sh,p_ccw_s_hi,[p4sh] pwm_ccw_speed_hi%15.3fRPM\n";
+const char str_p4pl[] PROGMEM = "p4pl,p_ccw_p_lo,[p4pl] pwm_ccw_phase_lo          %4.3f [0..1]\n";
+const char str_p4ph[] PROGMEM = "p4ph,p_ccw_p_hi,[p4ph] pwm_ccw_phase_hi          %4.3f [0..1]\n";
+const char str_p5of[] PROGMEM =      "p5of,p_off,[p5of] pwm_phase_off             %4.3f [0..1]\n";
 
 // Coordinate system offset groups
 const char str_g54x[] PROGMEM = "g54x,g54_x,[g54x] g54_x_offset%20.3f%S\n";
