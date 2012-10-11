@@ -101,7 +101,7 @@
 
 // Here are all the exceptions to the display and config rules, as neat little lists
 // NOTE: The number of SYSTEM_GROUP or SR_DEFAULTS elements cannot exceed CMD_MAX_OBJECTS
-#define GROUP_PREFIXES	"x,y,z,a,b,c,1,2,3,4,g54,g55,g56,g57,g58,g59"
+#define GROUP_PREFIXES	"x,y,z,a,b,c,1,2,3,4,p,g54,g55,g56,g57,g58,g59"
 #define GROUP_EXCLUSIONS "cycs,coor"	 // items that are not actually part of the xyzabcuvw0123456789 groups
 #define SYSTEM_GROUP 	"fv,fb,si,gpl,gun,gco,gpa,gdi,ja,ml,ma,mt,ic,il,ec,ee,ex,ej" // cats and dogs
 #define DONT_INITIALIZE "gc,sr,te,he,de" // commands that should not be initialized
@@ -234,6 +234,19 @@ struct cfgMotorParameters {
 	double steps_per_unit;			// steps (usteps)/mm or deg of travel
 };
 
+struct cfgPWMParameters {
+  	double frequency;				// base frequency for PWM driver, in Hz
+	double cw_speed_lo;             // M03 minimum spindle speed [0..N]
+    double cw_speed_hi;             // maximum spindle speed
+    double cw_phase_lo;             // pwm phase at minimum spindle speed, clamped [0..1]
+    double cw_phase_hi;             // pwm phase at maximum spindle speed, clamped [0..1]
+	double ccw_speed_lo;            // M04 for ccw settings
+    double ccw_speed_hi;
+    double ccw_phase_lo;
+    double ccw_phase_hi;
+    double phase_off;               // M05 pwm phase when spindle is disabled
+};
+
 struct cfgParameters {
 	uint8_t state;					// configuration state: 1=initialized, 0=not
 	double profile;					// configuration profile in effect
@@ -274,6 +287,7 @@ struct cfgParameters {
 	// motor and axis structs
 	struct cfgMotorParameters m[MOTORS];// settings for motors 1-4
 	struct cfgAxisParameters a[AXES];	// settings for axes X,Y,Z,A B,C
+    struct cfgPWMParameters p;          // settings for PWM p
 };
 struct cfgParameters cfg; 			// declared in the header to make it global
 #define CFG(x) cfg.a[x]				// handy macro for referencing axis values,

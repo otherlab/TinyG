@@ -153,6 +153,20 @@
 #define C_LATCH_BACKOFF 				-5
 #define C_ZERO_BACKOFF 					2
 
+
+// *** PWM SPINDLE CONTROL ***
+
+#define C_PWM_FREQUENCY                 100     // in Hz
+#define C_CW_SPEED_LO                   1000    // arbitrary units
+#define C_CW_SPEED_HI                   2000
+#define C_CW_PHASE_LO                   .125      // phase [0..1]
+#define C_CW_PHASE_HI                   .2
+#define C_CCW_SPEED_LO                  1000
+#define C_CCW_SPEED_HI                  2000
+#define C_CCW_PHASE_LO                  .125
+#define C_CCW_PHASE_HI                  .2
+#define C_PWM_PHASE_OFF                 .1
+
 // *** DEFAULT COORDINATE SYSTEM OFFSETS ***
 
 #define G54_X_OFFSET 0			// G54 is traditionally set to all zeros

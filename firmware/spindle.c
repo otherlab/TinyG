@@ -25,6 +25,7 @@
  */
 
 #include <avr/io.h>
+#include <math.h>
 #include "tinyg.h"
 #include "gpio.h"
 #include "gcode_parser.h"
@@ -32,16 +33,19 @@
 #include "spindle.h"
 #include "planner.h"
 #include "system.h"
+#include "config.h"
 #include "pwm.h"
 
 /* 
  * sp_init()
  */
-#define SPINDLE_PWM_FREQ 100.0  // Hz
 void cm_spindle_init()
 {
-    pwm_set_freq(PWM_1, SPINDLE_PWM_FREQ);
-    pwm_set_duty(PWM_1, 0.1);   // keep alive for ESC
+    if( cfg.p.frequency < 0 )
+        cfg.p.frequency = 0;
+    
+    pwm_set_freq(PWM_1, cfg.p.frequency);
+    pwm_set_duty(PWM_1, cfg.p.phase_off);
 	return;
 }
 
@@ -63,15 +67,30 @@ uint8_t cm_spindle_control(uint8_t spindle_mode)
 
 double cm_get_spindle_pwm( uint8_t spindle_mode )
 {
-    if (spindle_mode==SPINDLE_CW || spindle_mode==SPINDLE_CCW )
-    {
-        double microseconds = gm.spindle_speed;     // hi Alden! yes, this should be in RPM. need a spindle settings page in the eeprom...
-        if( microseconds < 1200 )   // minimum ESC turn on power
-            microseconds = 1200;
-        return ((microseconds-1000)/1000.0  * 0.1) + .1;   // range capped at 0.1-0.2
+    double speed_lo=0, speed_hi=0, phase_lo=0, phase_hi=0;
+    if (spindle_mode==SPINDLE_CW ) {
+        speed_lo = cfg.p.cw_speed_lo;
+        speed_hi = cfg.p.cw_speed_hi;
+        phase_lo = cfg.p.cw_phase_lo;
+        phase_hi = cfg.p.cw_phase_hi;
+    } else if (spindle_mode==SPINDLE_CCW ) {
+        speed_lo = cfg.p.ccw_speed_lo;
+        speed_hi = cfg.p.ccw_speed_hi;
+        phase_lo = cfg.p.ccw_phase_lo;
+        phase_hi = cfg.p.ccw_phase_hi;
     }
-    else
-        return 0.1; // minimum keep alive
+    
+    if (spindle_mode==SPINDLE_CW || spindle_mode==SPINDLE_CCW ) {
+        // clamp spindle speed to lo/hi range
+        if( gm.spindle_speed < speed_lo ) gm.spindle_speed = speed_lo;
+        if( gm.spindle_speed > speed_hi ) gm.spindle_speed = speed_hi;
+        
+        // normalize speed to [0..1]
+        double speed = (gm.spindle_speed - speed_lo) / (speed_hi - speed_lo);
+        return (speed * (phase_hi - phase_lo)) + phase_lo;
+        
+    } else
+        return cfg.p.phase_off;
 }
 
 /*

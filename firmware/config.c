@@ -496,6 +496,18 @@ const char str_clv[] PROGMEM = "clv,c_latch_v,[clv] c_latch_velocity%17.3f%S/min
 const char str_clb[] PROGMEM = "clb,c_latch_b,[clb] c_latch_backoff%18.3f%S\n";
 const char str_czb[] PROGMEM = "czb,c_z,[czb] c_zero_backoff%19.3f%S\n";
 
+
+const char str_pwmf[] PROGMEM =        "pwmf,p_f,[pwmf] pwm_frequency   %15.3fHz\n";
+const char str_p3sl[] PROGMEM =  "p3sl,p_cw_s_lo,[p3sl] pwm_cw_speed_lo %15.3f\n";
+const char str_p3sh[] PROGMEM =  "p3sh,p_cw_s_hi,[p3sh] pwm_cw_speed_hi %15.3f\n";
+const char str_p3pl[] PROGMEM =  "p3pl,p_cw_p_lo,[p3pl] pwm_cw_phase_lo           %4.3f\n";
+const char str_p3ph[] PROGMEM =  "p3ph,p_cw_p_hi,[p3ph] pwm_cw_phase_hi          %4.3f\n";
+const char str_p4sl[] PROGMEM = "p4sl,p_ccw_s_lo,[p4sl] pwm_ccw_speed_lo%15.3f\n";
+const char str_p4sh[] PROGMEM = "p4sh,p_ccw_s_hi,[p4sh] pwm_ccw_speed_hi%15.3f\n";
+const char str_p4pl[] PROGMEM = "p4pl,p_ccw_p_lo,[p4pl] pwm_ccw_phase_lo          %4.3f\n";
+const char str_p4ph[] PROGMEM = "p4ph,p_ccw_p_hi,[p4ph] pwm_ccw_phase_hi          %4.3f\n";
+const char str_p5of[] PROGMEM =      "p5of,p_off,[p5of] pwm_phase_off             %4.3f\n";
+
 // Coordinate system offset groups
 const char str_g54x[] PROGMEM = "g54x,g54_x,[g54x] g54_x_offset%20.3f%S\n";
 const char str_g54y[] PROGMEM = "g54y,g54_y,[g54y] g54_y_offset%20.3f%S\n";
@@ -572,6 +584,7 @@ const char str_z[] PROGMEM = "z,z,";
 const char str_a[] PROGMEM = "a,a,";
 const char str_b[] PROGMEM = "b,b,";
 const char str_c[] PROGMEM = "c,c,";
+const char str_p[] PROGMEM = "p,p,";
 const char str_g54[] PROGMEM = "g54,g54,";	// coordinate system offset groups
 const char str_g55[] PROGMEM = "g55,g55,";
 const char str_g56[] PROGMEM = "g56,g56,";
@@ -774,6 +787,18 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_clb, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].latch_backoff,	C_LATCH_BACKOFF },
 	{ str_czb, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].zero_backoff,		C_ZERO_BACKOFF },
 
+    // PWM settings
+    { str_pwmf, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.frequency,			C_PWM_FREQUENCY },
+    { str_p3sl, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.cw_speed_lo,        C_CW_SPEED_LO },
+    { str_p3sh, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.cw_speed_hi,        C_CW_SPEED_HI },
+    { str_p3pl, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.cw_phase_lo,        C_CW_PHASE_LO },
+    { str_p3ph, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.cw_phase_hi,        C_CW_PHASE_HI },
+    { str_p4sl, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_speed_lo,       C_CCW_SPEED_LO },
+    { str_p4sh, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_speed_hi,       C_CCW_SPEED_HI },
+    { str_p4pl, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_phase_lo,       C_CCW_PHASE_LO },
+    { str_p4ph, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_phase_hi,       C_CCW_PHASE_HI },
+    { str_p5of, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.phase_off,          C_PWM_PHASE_OFF },
+
 	// coordinate system offsets
 	{ str_g54x, _print_lin, _get_dbu, _set_dbu,(double *)&cfg.offset[G54][X], G54_X_OFFSET },
 	{ str_g54y, _print_lin, _get_dbu, _set_dbu,(double *)&cfg.offset[G54][Y], G54_Y_OFFSET },
@@ -852,6 +877,7 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_a, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },
 	{ str_b, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },
 	{ str_c, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },
+    { str_p, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },   // pwm
 	{ str_g54, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// coord offset groups
 	{ str_g55, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },
 	{ str_g56, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },
@@ -877,7 +903,7 @@ struct cfgItem const cfgArray[] PROGMEM = {
 
 // hack alert. Find a better way to do this
 #define CMD_COUNT_STATUS 20		// number of status report persistence elements - see final array [index]
-#define CMD_COUNT_GROUPS 22		// count of simple groups
+#define CMD_COUNT_GROUPS 23		// count of simple groups
 #define CMD_COUNT_UBER_GROUPS 4 // count of uber-groups
 
 #define CMD_INDEX_END_SINGLES (CMD_INDEX_MAX - CMD_COUNT_STATUS - CMD_COUNT_GROUPS - CMD_COUNT_UBER_GROUPS)
