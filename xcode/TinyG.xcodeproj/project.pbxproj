@@ -6,6 +6,131 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		20A7D74E16264DD400D083B2 /* arc.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6801624ECA000D083B2 /* arc.c */; };
+		20A7D74F16264DD400D083B2 /* arc.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6811624ECA000D083B2 /* arc.h */; };
+		20A7D75016264DD400D083B2 /* canonical_machine.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6821624ECA000D083B2 /* canonical_machine.c */; };
+		20A7D75116264DD400D083B2 /* canonical_machine.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6831624ECA000D083B2 /* canonical_machine.h */; };
+		20A7D75216264DD400D083B2 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6841624ECA000D083B2 /* config.c */; };
+		20A7D75316264DD400D083B2 /* config.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6851624ECA000D083B2 /* config.h */; };
+		20A7D75416264DD400D083B2 /* controller.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6861624ECA000D083B2 /* controller.c */; };
+		20A7D75516264DD400D083B2 /* controller.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6871624ECA000D083B2 /* controller.h */; };
+		20A7D75616264DD400D083B2 /* cycle_homing.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6881624ECA000D083B2 /* cycle_homing.c */; };
+		20A7D75716264DD400D083B2 /* gcode_bigcircle_smallcircle.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D68D1624ECA000D083B2 /* gcode_bigcircle_smallcircle.h */; };
+		20A7D75816264DD400D083B2 /* gcode_boxes_400mm.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D68E1624ECA000D083B2 /* gcode_boxes_400mm.h */; };
+		20A7D75916264DD400D083B2 /* gcode_braid2d.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D68F1624ECA000D083B2 /* gcode_braid2d.h */; };
+		20A7D75A16264DD400D083B2 /* gcode_braid_short.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6901624ECA000D083B2 /* gcode_braid_short.h */; };
+		20A7D75B16264DD400D083B2 /* gcode_braid_short_001.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6911624ECA000D083B2 /* gcode_braid_short_001.h */; };
+		20A7D75C16264DD400D083B2 /* gcode_braid_short_002.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6921624ECA000D083B2 /* gcode_braid_short_002.h */; };
+		20A7D75D16264DD400D083B2 /* gcode_circles2.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6931624ECA000D083B2 /* gcode_circles2.h */; };
+		20A7D75E16264DD400D083B2 /* gcode_contraptor_circle.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6941624ECA000D083B2 /* gcode_contraptor_circle.h */; };
+		20A7D75F16264DD400D083B2 /* gcode_debug_tests.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6951624ECA000D083B2 /* gcode_debug_tests.h */; };
+		20A7D76016264DD400D083B2 /* gcode_drift_pattern.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6961624ECA000D083B2 /* gcode_drift_pattern.h */; };
+		20A7D76116264DD400D083B2 /* gcode_hacdc.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6971624ECA000D083B2 /* gcode_hacdc.h */; };
+		20A7D76216264DD400D083B2 /* gcode_hokanson.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6981624ECA000D083B2 /* gcode_hokanson.h */; };
+		20A7D76316264DD400D083B2 /* gcode_infinity_002.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6991624ECA000D083B2 /* gcode_infinity_002.h */; };
+		20A7D76416264DD400D083B2 /* gcode_line_X_800mm.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D69A1624ECA000D083B2 /* gcode_line_X_800mm.h */; };
+		20A7D76516264DD400D083B2 /* gcode_line_Xa_800mm.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D69B1624ECA000D083B2 /* gcode_line_Xa_800mm.h */; };
+		20A7D76616264DD400D083B2 /* gcode_mickey_test.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D69C1624ECA000D083B2 /* gcode_mickey_test.h */; };
+		20A7D76716264DD400D083B2 /* gcode_mudflap.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D69D1624ECA000D083B2 /* gcode_mudflap.h */; };
+		20A7D76816264DD400D083B2 /* gcode_nfinity_001.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D69E1624ECA000D083B2 /* gcode_nfinity_001.h */; };
+		20A7D76916264DD400D083B2 /* gcode_reilly_111115.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D69F1624ECA000D083B2 /* gcode_reilly_111115.h */; };
+		20A7D76A16264DD400D083B2 /* gcode_roadrunner.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A01624ECA000D083B2 /* gcode_roadrunner.h */; };
+		20A7D76B16264DD400D083B2 /* gcode_square_pocket.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A11624ECA000D083B2 /* gcode_square_pocket.h */; };
+		20A7D76C16264DD400D083B2 /* gcode_star_1x1.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A21624ECA000D083B2 /* gcode_star_1x1.h */; };
+		20A7D76D16264DD400D083B2 /* gcode_startup_tests.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A31624ECA000D083B2 /* gcode_startup_tests.h */; };
+		20A7D76E16264DD400D083B2 /* gcode_straight_600mm.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A41624ECA000D083B2 /* gcode_straight_600mm.h */; };
+		20A7D76F16264DD400D083B2 /* gcode_test001.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A51624ECA000D083B2 /* gcode_test001.h */; };
+		20A7D77016264DD400D083B2 /* gcode_test_002.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A61624ECA000D083B2 /* gcode_test_002.h */; };
+		20A7D77116264DD400D083B2 /* gcode_tests.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A71624ECA000D083B2 /* gcode_tests.h */; };
+		20A7D77216264DD400D083B2 /* gcode_xyzcurve.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A81624ECA000D083B2 /* gcode_xyzcurve.h */; };
+		20A7D77316264DD400D083B2 /* gcode_zoetrope.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6A91624ECA000D083B2 /* gcode_zoetrope.h */; };
+		20A7D77416264DD400D083B2 /* gcode_parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6AA1624ECA000D083B2 /* gcode_parser.c */; };
+		20A7D77516264DD400D083B2 /* gcode_parser.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6AB1624ECA000D083B2 /* gcode_parser.h */; };
+		20A7D77616264DD400D083B2 /* gpio.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6AC1624ECA000D083B2 /* gpio.c */; };
+		20A7D77716264DD400D083B2 /* gpio.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6AD1624ECA000D083B2 /* gpio.h */; };
+		20A7D77816264DD400D083B2 /* help.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6AE1624ECA000D083B2 /* help.c */; };
+		20A7D77916264DD400D083B2 /* help.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6AF1624ECA000D083B2 /* help.h */; };
+		20A7D77A16264DD400D083B2 /* json_parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B01624ECA000D083B2 /* json_parser.c */; };
+		20A7D77B16264DD400D083B2 /* json_parser.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B11624ECA000D083B2 /* json_parser.h */; };
+		20A7D77C16264DD400D083B2 /* kinematics.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B21624ECA000D083B2 /* kinematics.c */; };
+		20A7D77D16264DD400D083B2 /* kinematics.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B31624ECA000D083B2 /* kinematics.h */; };
+		20A7D77E16264DD400D083B2 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B41624ECA000D083B2 /* main.c */; };
+		20A7D77F16264DD400D083B2 /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B51624ECA000D083B2 /* network.c */; };
+		20A7D78016264DD400D083B2 /* network.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B61624ECA000D083B2 /* network.h */; };
+		20A7D78116264DD400D083B2 /* planner.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B71624ECA000D083B2 /* planner.c */; };
+		20A7D78216264DD400D083B2 /* planner.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B81624ECA000D083B2 /* planner.h */; };
+		20A7D78316264DD400D083B2 /* pwm.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6B91624ECA000D083B2 /* pwm.c */; };
+		20A7D78416264DD400D083B2 /* pwm.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6BA1624ECA000D083B2 /* pwm.h */; };
+		20A7D78516264DD400D083B2 /* report.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6BB1624ECA000D083B2 /* report.c */; };
+		20A7D78616264DD400D083B2 /* report.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6BC1624ECA000D083B2 /* report.h */; };
+		20A7D78716264DD400D083B2 /* settings_default.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6BE1624ECA000D083B2 /* settings_default.h */; };
+		20A7D78816264DD400D083B2 /* settings_lumenlabMicRoV3.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6BF1624ECA000D083B2 /* settings_lumenlabMicRoV3.h */; };
+		20A7D78916264DD400D083B2 /* settings_otherlab.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C01624ECA000D083B2 /* settings_otherlab.h */; };
+		20A7D78A16264DD400D083B2 /* settings_probotixV90.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C11624ECA000D083B2 /* settings_probotixV90.h */; };
+		20A7D78B16264DD400D083B2 /* settings_sacidu93.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C21624ECA000D083B2 /* settings_sacidu93.h */; };
+		20A7D78C16264DD400D083B2 /* settings_shapeoko375.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C31624ECA000D083B2 /* settings_shapeoko375.h */; };
+		20A7D78D16264DD400D083B2 /* settings_Ultimaker.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C41624ECA000D083B2 /* settings_Ultimaker.h */; };
+		20A7D78E16264DD400D083B2 /* settings_zen7x12.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C51624ECA000D083B2 /* settings_zen7x12.h */; };
+		20A7D78F16264DD400D083B2 /* settings.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C61624ECA000D083B2 /* settings.h */; };
+		20A7D79016264DD400D083B2 /* spindle.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C71624ECA000D083B2 /* spindle.c */; };
+		20A7D79116264DD400D083B2 /* spindle.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C81624ECA000D083B2 /* spindle.h */; };
+		20A7D79216264DD400D083B2 /* stepper.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6C91624ECA000D083B2 /* stepper.c */; };
+		20A7D79316264DD400D083B2 /* stepper.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6CA1624ECA000D083B2 /* stepper.h */; };
+		20A7D79416264DD400D083B2 /* system.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6CB1624ECA000D083B2 /* system.c */; };
+		20A7D79516264DD400D083B2 /* system.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6CC1624ECA000D083B2 /* system.h */; };
+		20A7D79616264DD400D083B2 /* test.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6CD1624ECA000D083B2 /* test.c */; };
+		20A7D79716264DD400D083B2 /* test.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6CE1624ECA000D083B2 /* test.h */; };
+		20A7D79816264DD400D083B2 /* saicdu93_diagnostics.txt in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D01624ECA000D083B2 /* saicdu93_diagnostics.txt */; };
+		20A7D79916264DD400D083B2 /* test_001_smoke.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D11624ECA000D083B2 /* test_001_smoke.h */; };
+		20A7D79A16264DD400D083B2 /* test_002_squares.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D21624ECA000D083B2 /* test_002_squares.h */; };
+		20A7D79B16264DD400D083B2 /* test_003_arcs.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D31624ECA000D083B2 /* test_003_arcs.h */; };
+		20A7D79C16264DD400D083B2 /* test_004_dwell.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D41624ECA000D083B2 /* test_004_dwell.h */; };
+		20A7D79D16264DD400D083B2 /* test_005_homing.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D51624ECA000D083B2 /* test_005_homing.h */; };
+		20A7D79E16264DD400D083B2 /* test_006_feedhold.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D61624ECA000D083B2 /* test_006_feedhold.h */; };
+		20A7D79F16264DD400D083B2 /* test_007_Mcodes.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D71624ECA000D083B2 /* test_007_Mcodes.h */; };
+		20A7D7A016264DD400D083B2 /* test_008_json.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D81624ECA000D083B2 /* test_008_json.h */; };
+		20A7D7A116264DD400D083B2 /* test_009_inverse_time.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6D91624ECA000D083B2 /* test_009_inverse_time.h */; };
+		20A7D7A216264DD400D083B2 /* test_010_rotary.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6DA1624ECA000D083B2 /* test_010_rotary.h */; };
+		20A7D7A316264DD400D083B2 /* test_011_small_moves.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6DB1624ECA000D083B2 /* test_011_small_moves.h */; };
+		20A7D7A416264DD400D083B2 /* test_012_slow_moves.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6DC1624ECA000D083B2 /* test_012_slow_moves.h */; };
+		20A7D7A516264DD400D083B2 /* test_050_mudflap.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6DD1624ECA000D083B2 /* test_050_mudflap.h */; };
+		20A7D7A616264DD400D083B2 /* test_051_braid.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6DE1624ECA000D083B2 /* test_051_braid.h */; };
+		20A7D7A716264DD400D083B2 /* tinyg.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6DF1624ECA000D083B2 /* tinyg.h */; };
+		20A7D7A816264DD400D083B2 /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E01624ECA000D083B2 /* util.c */; };
+		20A7D7A916264DD400D083B2 /* util.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E11624ECA000D083B2 /* util.h */; };
+		20A7D7AA16264DD400D083B2 /* xio.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E31624ECA000D083B2 /* xio.c */; };
+		20A7D7AB16264DD400D083B2 /* xio.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E41624ECA000D083B2 /* xio.h */; };
+		20A7D7AC16264DD400D083B2 /* xio_file.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E51624ECA000D083B2 /* xio_file.h */; };
+		20A7D7AD16264DD400D083B2 /* xio_pgm.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E61624ECA000D083B2 /* xio_pgm.c */; };
+		20A7D7AE16264DD400D083B2 /* xio_rs485.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E71624ECA000D083B2 /* xio_rs485.c */; };
+		20A7D7AF16264DD400D083B2 /* xio_signals.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E81624ECA000D083B2 /* xio_signals.c */; };
+		20A7D7B016264DD400D083B2 /* xio_signals.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6E91624ECA000D083B2 /* xio_signals.h */; };
+		20A7D7B116264DD400D083B2 /* xio_usart.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6EA1624ECA000D083B2 /* xio_usart.c */; };
+		20A7D7B216264DD400D083B2 /* xio_usart.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6EB1624ECA000D083B2 /* xio_usart.h */; };
+		20A7D7B316264DD400D083B2 /* xio_usb.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6EC1624ECA000D083B2 /* xio_usb.c */; };
+		20A7D7B416264DD400D083B2 /* xmega_eeprom.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6EE1624ECA000D083B2 /* xmega_eeprom.c */; };
+		20A7D7B516264DD400D083B2 /* xmega_eeprom.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6EF1624ECA000D083B2 /* xmega_eeprom.h */; };
+		20A7D7B616264DD400D083B2 /* xmega_init.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6F01624ECA000D083B2 /* xmega_init.c */; };
+		20A7D7B716264DD400D083B2 /* xmega_init.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6F11624ECA000D083B2 /* xmega_init.h */; };
+		20A7D7B816264DD500D083B2 /* xmega_interrupts.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6F21624ECA000D083B2 /* xmega_interrupts.c */; };
+		20A7D7B916264DD500D083B2 /* xmega_interrupts.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6F31624ECA000D083B2 /* xmega_interrupts.h */; };
+		20A7D7BA16264DD500D083B2 /* xmega_rtc.c in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6F41624ECA000D083B2 /* xmega_rtc.c */; };
+		20A7D7BB16264DD500D083B2 /* xmega_rtc.h in Sources */ = {isa = PBXBuildFile; fileRef = 20A7D6F51624ECA000D083B2 /* xmega_rtc.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		20A7D74216264DB900D083B2 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		20A7D6801624ECA000D083B2 /* arc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = arc.c; path = ../firmware/arc.c; sourceTree = "<group>"; };
 		20A7D6811624ECA000D083B2 /* arc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arc.h; path = ../firmware/arc.h; sourceTree = "<group>"; };
@@ -119,7 +244,18 @@
 		20A7D6F31624ECA000D083B2 /* xmega_interrupts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmega_interrupts.h; sourceTree = "<group>"; };
 		20A7D6F41624ECA000D083B2 /* xmega_rtc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xmega_rtc.c; sourceTree = "<group>"; };
 		20A7D6F51624ECA000D083B2 /* xmega_rtc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmega_rtc.h; sourceTree = "<group>"; };
+		20A7D74416264DB900D083B2 /* tinyg-stub-for-xcode */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "tinyg-stub-for-xcode"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		20A7D74116264DB900D083B2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		20A7D66F1624EC1000D083B2 = {
@@ -171,6 +307,8 @@
 				20A7D6E11624ECA000D083B2 /* util.h */,
 				20A7D6E21624ECA000D083B2 /* xio */,
 				20A7D6ED1624ECA000D083B2 /* xmega */,
+				20A7D74416264DB900D083B2 /* tinyg-stub-for-xcode */,
+				20A7D74616264DB900D083B2 /* tinyg-stub-for-xcode */,
 			);
 			sourceTree = "<group>";
 		};
@@ -294,6 +432,13 @@
 			path = ../firmware/xmega;
 			sourceTree = "<group>";
 		};
+		20A7D74616264DB900D083B2 /* tinyg-stub-for-xcode */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "tinyg-stub-for-xcode";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXLegacyTarget section */
@@ -313,6 +458,26 @@
 		};
 /* End PBXLegacyTarget section */
 
+/* Begin PBXNativeTarget section */
+		20A7D74316264DB900D083B2 /* tinyg-stub-for-xcode */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 20A7D74B16264DBA00D083B2 /* Build configuration list for PBXNativeTarget "tinyg-stub-for-xcode" */;
+			buildPhases = (
+				20A7D74016264DB900D083B2 /* Sources */,
+				20A7D74116264DB900D083B2 /* Frameworks */,
+				20A7D74216264DB900D083B2 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "tinyg-stub-for-xcode";
+			productName = "tinyg-stub-for-xcode";
+			productReference = 20A7D74416264DB900D083B2 /* tinyg-stub-for-xcode */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
 /* Begin PBXProject section */
 		20A7D6711624EC1000D083B2 /* Project object */ = {
 			isa = PBXProject;
@@ -328,20 +493,142 @@
 				en,
 			);
 			mainGroup = 20A7D66F1624EC1000D083B2;
+			productRefGroup = 20A7D66F1624EC1000D083B2;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				20A7D6761624EC1000D083B2 /* TinyG */,
+				20A7D74316264DB900D083B2 /* tinyg-stub-for-xcode */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		20A7D74016264DB900D083B2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				20A7D74E16264DD400D083B2 /* arc.c in Sources */,
+				20A7D74F16264DD400D083B2 /* arc.h in Sources */,
+				20A7D75016264DD400D083B2 /* canonical_machine.c in Sources */,
+				20A7D75116264DD400D083B2 /* canonical_machine.h in Sources */,
+				20A7D75216264DD400D083B2 /* config.c in Sources */,
+				20A7D75316264DD400D083B2 /* config.h in Sources */,
+				20A7D75416264DD400D083B2 /* controller.c in Sources */,
+				20A7D75516264DD400D083B2 /* controller.h in Sources */,
+				20A7D75616264DD400D083B2 /* cycle_homing.c in Sources */,
+				20A7D75716264DD400D083B2 /* gcode_bigcircle_smallcircle.h in Sources */,
+				20A7D75816264DD400D083B2 /* gcode_boxes_400mm.h in Sources */,
+				20A7D75916264DD400D083B2 /* gcode_braid2d.h in Sources */,
+				20A7D75A16264DD400D083B2 /* gcode_braid_short.h in Sources */,
+				20A7D75B16264DD400D083B2 /* gcode_braid_short_001.h in Sources */,
+				20A7D75C16264DD400D083B2 /* gcode_braid_short_002.h in Sources */,
+				20A7D75D16264DD400D083B2 /* gcode_circles2.h in Sources */,
+				20A7D75E16264DD400D083B2 /* gcode_contraptor_circle.h in Sources */,
+				20A7D75F16264DD400D083B2 /* gcode_debug_tests.h in Sources */,
+				20A7D76016264DD400D083B2 /* gcode_drift_pattern.h in Sources */,
+				20A7D76116264DD400D083B2 /* gcode_hacdc.h in Sources */,
+				20A7D76216264DD400D083B2 /* gcode_hokanson.h in Sources */,
+				20A7D76316264DD400D083B2 /* gcode_infinity_002.h in Sources */,
+				20A7D76416264DD400D083B2 /* gcode_line_X_800mm.h in Sources */,
+				20A7D76516264DD400D083B2 /* gcode_line_Xa_800mm.h in Sources */,
+				20A7D76616264DD400D083B2 /* gcode_mickey_test.h in Sources */,
+				20A7D76716264DD400D083B2 /* gcode_mudflap.h in Sources */,
+				20A7D76816264DD400D083B2 /* gcode_nfinity_001.h in Sources */,
+				20A7D76916264DD400D083B2 /* gcode_reilly_111115.h in Sources */,
+				20A7D76A16264DD400D083B2 /* gcode_roadrunner.h in Sources */,
+				20A7D76B16264DD400D083B2 /* gcode_square_pocket.h in Sources */,
+				20A7D76C16264DD400D083B2 /* gcode_star_1x1.h in Sources */,
+				20A7D76D16264DD400D083B2 /* gcode_startup_tests.h in Sources */,
+				20A7D76E16264DD400D083B2 /* gcode_straight_600mm.h in Sources */,
+				20A7D76F16264DD400D083B2 /* gcode_test001.h in Sources */,
+				20A7D77016264DD400D083B2 /* gcode_test_002.h in Sources */,
+				20A7D77116264DD400D083B2 /* gcode_tests.h in Sources */,
+				20A7D77216264DD400D083B2 /* gcode_xyzcurve.h in Sources */,
+				20A7D77316264DD400D083B2 /* gcode_zoetrope.h in Sources */,
+				20A7D77416264DD400D083B2 /* gcode_parser.c in Sources */,
+				20A7D77516264DD400D083B2 /* gcode_parser.h in Sources */,
+				20A7D77616264DD400D083B2 /* gpio.c in Sources */,
+				20A7D77716264DD400D083B2 /* gpio.h in Sources */,
+				20A7D77816264DD400D083B2 /* help.c in Sources */,
+				20A7D77916264DD400D083B2 /* help.h in Sources */,
+				20A7D77A16264DD400D083B2 /* json_parser.c in Sources */,
+				20A7D77B16264DD400D083B2 /* json_parser.h in Sources */,
+				20A7D77C16264DD400D083B2 /* kinematics.c in Sources */,
+				20A7D77D16264DD400D083B2 /* kinematics.h in Sources */,
+				20A7D77E16264DD400D083B2 /* main.c in Sources */,
+				20A7D77F16264DD400D083B2 /* network.c in Sources */,
+				20A7D78016264DD400D083B2 /* network.h in Sources */,
+				20A7D78116264DD400D083B2 /* planner.c in Sources */,
+				20A7D78216264DD400D083B2 /* planner.h in Sources */,
+				20A7D78316264DD400D083B2 /* pwm.c in Sources */,
+				20A7D78416264DD400D083B2 /* pwm.h in Sources */,
+				20A7D78516264DD400D083B2 /* report.c in Sources */,
+				20A7D78616264DD400D083B2 /* report.h in Sources */,
+				20A7D78716264DD400D083B2 /* settings_default.h in Sources */,
+				20A7D78816264DD400D083B2 /* settings_lumenlabMicRoV3.h in Sources */,
+				20A7D78916264DD400D083B2 /* settings_otherlab.h in Sources */,
+				20A7D78A16264DD400D083B2 /* settings_probotixV90.h in Sources */,
+				20A7D78B16264DD400D083B2 /* settings_sacidu93.h in Sources */,
+				20A7D78C16264DD400D083B2 /* settings_shapeoko375.h in Sources */,
+				20A7D78D16264DD400D083B2 /* settings_Ultimaker.h in Sources */,
+				20A7D78E16264DD400D083B2 /* settings_zen7x12.h in Sources */,
+				20A7D78F16264DD400D083B2 /* settings.h in Sources */,
+				20A7D79016264DD400D083B2 /* spindle.c in Sources */,
+				20A7D79116264DD400D083B2 /* spindle.h in Sources */,
+				20A7D79216264DD400D083B2 /* stepper.c in Sources */,
+				20A7D79316264DD400D083B2 /* stepper.h in Sources */,
+				20A7D79416264DD400D083B2 /* system.c in Sources */,
+				20A7D79516264DD400D083B2 /* system.h in Sources */,
+				20A7D79616264DD400D083B2 /* test.c in Sources */,
+				20A7D79716264DD400D083B2 /* test.h in Sources */,
+				20A7D79816264DD400D083B2 /* saicdu93_diagnostics.txt in Sources */,
+				20A7D79916264DD400D083B2 /* test_001_smoke.h in Sources */,
+				20A7D79A16264DD400D083B2 /* test_002_squares.h in Sources */,
+				20A7D79B16264DD400D083B2 /* test_003_arcs.h in Sources */,
+				20A7D79C16264DD400D083B2 /* test_004_dwell.h in Sources */,
+				20A7D79D16264DD400D083B2 /* test_005_homing.h in Sources */,
+				20A7D79E16264DD400D083B2 /* test_006_feedhold.h in Sources */,
+				20A7D79F16264DD400D083B2 /* test_007_Mcodes.h in Sources */,
+				20A7D7A016264DD400D083B2 /* test_008_json.h in Sources */,
+				20A7D7A116264DD400D083B2 /* test_009_inverse_time.h in Sources */,
+				20A7D7A216264DD400D083B2 /* test_010_rotary.h in Sources */,
+				20A7D7A316264DD400D083B2 /* test_011_small_moves.h in Sources */,
+				20A7D7A416264DD400D083B2 /* test_012_slow_moves.h in Sources */,
+				20A7D7A516264DD400D083B2 /* test_050_mudflap.h in Sources */,
+				20A7D7A616264DD400D083B2 /* test_051_braid.h in Sources */,
+				20A7D7A716264DD400D083B2 /* tinyg.h in Sources */,
+				20A7D7A816264DD400D083B2 /* util.c in Sources */,
+				20A7D7A916264DD400D083B2 /* util.h in Sources */,
+				20A7D7AA16264DD400D083B2 /* xio.c in Sources */,
+				20A7D7AB16264DD400D083B2 /* xio.h in Sources */,
+				20A7D7AC16264DD400D083B2 /* xio_file.h in Sources */,
+				20A7D7AD16264DD400D083B2 /* xio_pgm.c in Sources */,
+				20A7D7AE16264DD400D083B2 /* xio_rs485.c in Sources */,
+				20A7D7AF16264DD400D083B2 /* xio_signals.c in Sources */,
+				20A7D7B016264DD400D083B2 /* xio_signals.h in Sources */,
+				20A7D7B116264DD400D083B2 /* xio_usart.c in Sources */,
+				20A7D7B216264DD400D083B2 /* xio_usart.h in Sources */,
+				20A7D7B316264DD400D083B2 /* xio_usb.c in Sources */,
+				20A7D7B416264DD400D083B2 /* xmega_eeprom.c in Sources */,
+				20A7D7B516264DD400D083B2 /* xmega_eeprom.h in Sources */,
+				20A7D7B616264DD400D083B2 /* xmega_init.c in Sources */,
+				20A7D7B716264DD400D083B2 /* xmega_init.h in Sources */,
+				20A7D7B816264DD500D083B2 /* xmega_interrupts.c in Sources */,
+				20A7D7B916264DD500D083B2 /* xmega_interrupts.h in Sources */,
+				20A7D7BA16264DD500D083B2 /* xmega_rtc.c in Sources */,
+				20A7D7BB16264DD500D083B2 /* xmega_rtc.h in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		20A7D6771624EC1000D083B2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ARCHS = AVR;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -356,13 +643,12 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = "/opt/local/bin/avr-gcc";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -370,7 +656,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ARCHS = AVR;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -379,25 +665,18 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_VERSION = "/opt/local/bin/avr-gcc";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				SDKROOT = macosx;
 			};
 			name = Release;
 		};
 		20A7D67A1624EC1000D083B2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
-				DEBUGGING_SYMBOLS = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				INCLUDES = "/opt/local/avr/include/ /opt/local/avr/include/avr/";
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
 				PATH = "/opt/local/bin:$(PATH);";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -406,12 +685,29 @@
 		20A7D67B1624EC1000D083B2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
 				INCLUDES = "/opt/local/avr/include/ /opt/local/avr/include/avr/";
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
 				PATH = "/opt/local/bin:$(PATH);";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		20A7D74C16264DBA00D083B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		20A7D74D16264DBA00D083B2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -435,6 +731,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		20A7D74B16264DBA00D083B2 /* Build configuration list for PBXNativeTarget "tinyg-stub-for-xcode" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20A7D74C16264DBA00D083B2 /* Debug */,
+				20A7D74D16264DBA00D083B2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
