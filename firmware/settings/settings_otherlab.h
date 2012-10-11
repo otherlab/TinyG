@@ -52,19 +52,19 @@
 #define M1_TRAVEL_PER_REV 	54.023		// 1tr
 #define M1_MICROSTEPS 		8			// 1mi		1,2,4,8
 #define M1_POLARITY 		1			// 1po		0=normal, 1=reversed
-#define M1_POWER_MODE 		0			// 1pm		TRUE=low power idle enabled 
+#define M1_POWER_MODE 		1			// 1pm		TRUE=low power idle enabled 
 
 #define M2_MOTOR_MAP 		Y
 #define M2_STEP_ANGLE 		1.8
 #define M2_TRAVEL_PER_REV 	34.314
 #define M2_MICROSTEPS 		8
 #define M2_POLARITY 		1
-#define M2_POWER_MODE 		0			// hold
+#define M2_POWER_MODE 		1			// hold
 
 #define M3_MOTOR_MAP 		Z
 #define M3_STEP_ANGLE 		15
 #define M3_TRAVEL_PER_REV 	2.438
-#define M3_MICROSTEPS 		2
+#define M3_MICROSTEPS 		4
 #define M3_POLARITY 		1
 #define M3_POWER_MODE 		1			// z-axis leadscrew doesn't need hold, enable low power idle
 
@@ -73,7 +73,7 @@
 #define M4_TRAVEL_PER_REV 	180.0		// degrees moved per motor rev
 #define M4_MICROSTEPS 		8
 #define M4_POLARITY 		1			
-#define M4_POWER_MODE 		0			// hold
+#define M4_POWER_MODE 		1			// hold
 
 // *** axis settings ***
 
@@ -86,7 +86,7 @@
 #define X_SWITCH_MODE 					1					// xsm		1=switches enabled for homing only
 #define X_SEARCH_VELOCITY 				-2000				// xsv		move in negative direction
 #define X_LATCH_VELOCITY 				100					// xlv		mm/min
-#define X_LATCH_BACKOFF 				10					// xlb		mm
+#define X_LATCH_BACKOFF 				9					// xlb		mm
 #define X_ZERO_BACKOFF 					1					// xzb		mm
 
 #define Y_AXIS_MODE 					AXIS_STANDARD
@@ -103,15 +103,15 @@
 
 #define Z_AXIS_MODE 					AXIS_STANDARD
 #define Z_VELOCITY_MAX 					10000
-#define Z_FEEDRATE_MAX 					500
+#define Z_FEEDRATE_MAX 					1000
 #define Z_TRAVEL_MAX 					25
 #define Z_JERK_MAX 						JERK_MAX	// 200 Million
 #define Z_JUNCTION_DEVIATION 			JUNCTION_DEVIATION
 #define Z_SWITCH_MODE 					1
-#define Z_SEARCH_VELOCITY 				500.0
-#define Z_LATCH_VELOCITY 				100.0
-#define Z_LATCH_BACKOFF 				5
-#define Z_ZERO_BACKOFF 					1
+#define Z_SEARCH_VELOCITY 				1000.0
+#define Z_LATCH_VELOCITY 				500.0
+#define Z_LATCH_BACKOFF 				9
+#define Z_ZERO_BACKOFF 					20.5        // based on blade geometry
 
 #define A_AXIS_MODE 					AXIS_STANDARD
 #define A_VELOCITY_MAX 					60000.0		// deg/min

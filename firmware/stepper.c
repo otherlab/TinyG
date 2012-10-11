@@ -163,6 +163,8 @@
 #include "stepper.h" 	
 #include "planner.h"
 
+#define MOTOR_POWER_ON_MOVE 1   // enable all motor power when moving any axis
+
 static void _exec_move(void);
 static void _load_move(void);
 static void _request_load_move(void);
@@ -329,9 +331,16 @@ ISR(TIMER_DDA_ISR_vect)
 	}
 	if (--st.timer_ticks_downcount == 0) {			// end move
  		TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;		// disable DDA timer
-		// power-down motors if this feature is enabled
+		
+#if MOTOR_POWER_ON_MOVE
+    PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm;
+    PORT_MOTOR_2.OUTSET = MOTOR_ENABLE_BIT_bm;
+    PORT_MOTOR_3.OUTSET = MOTOR_ENABLE_BIT_bm;
+    PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm;
+#else
+        // power-down motors if this feature is enabled
 		if (cfg.m[MOTOR_1].power_mode == true) {
-			PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm; 
+			PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm;
 		}
 		if (cfg.m[MOTOR_2].power_mode == true) {
 			PORT_MOTOR_2.OUTSET = MOTOR_ENABLE_BIT_bm; 
@@ -342,6 +351,7 @@ ISR(TIMER_DDA_ISR_vect)
 		if (cfg.m[MOTOR_4].power_mode == true) {
 			PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm; 
 		}
+#endif
 		_load_move();							// load the next move
 	}
 }
@@ -443,8 +453,13 @@ void _load_move()
 				} else {
 					device.port[i]->OUTSET = DIRECTION_BIT_bm;	// CCW motion
 				}
+#if !MOTOR_POWER_ON_MOVE
 				device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;	// enable motor
+#endif
 			}
+#if MOTOR_POWER_ON_MOVE
+            device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;   // enable all motors
+#endif
 		}
 		TIMER_DDA.CTRLA = STEP_TIMER_ENABLE;					// enable the DDA timer
 
