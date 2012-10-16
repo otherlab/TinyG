@@ -79,7 +79,7 @@
  * variables and settings 
  */
 											// timer for debouncing switches
-#define SW_LOCKOUT_TICKS 10					// 10=100ms. RTC ticks are ~10ms each
+#define SW_LOCKOUT_TICKS 50					// 50=500ms. RTC ticks are ~10ms each. Roller switches are very noisy....
 
 static void _switch_isr_helper(uint8_t sw_flag, uint8_t axis);
 static uint8_t gpio_port_value;				// global for synthetic port read value
