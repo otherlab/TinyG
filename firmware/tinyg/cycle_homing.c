@@ -174,7 +174,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 			cm_set_units_mode(hm.units_mode_saved);
 			cm_set_distance_mode(hm.distance_mode_saved);
 			cm.cycle_state = CYCLE_STARTED;
-			cm_cycle_end();
+			cm_exec_cycle_end();
 			return (TG_HOMING_CYCLE_FAILED);
 		}
 	}
@@ -187,6 +187,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 //	hm.jerk_saved = cfg.a[axis].jerk_max;					// per-axis save
 
 	// if moving to a MIN switch...
+    int axis_switch = axis;
 	if (cfg.a[axis].search_velocity < 0) {					// search velocity is negative
 		hm.search_travel = -cfg.a[axis].travel_max;			// make search travel negative
 		hm.latch_backoff = cfg.a[axis].latch_backoff;		// backoffs move opposite of search
@@ -195,6 +196,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 		hm.search_travel = cfg.a[axis].travel_max;			// make search travel positive
 		hm.latch_backoff = -cfg.a[axis].latch_backoff;		// backoffs move opposite of search
 		hm.zero_backoff = -cfg.a[axis].zero_backoff;
+        axis_switch += SW_OFFSET;   // check the max switch for backoffs
 	}
 
 	// ---> For now all axes are single - no dual axis detection or invocation
@@ -203,7 +205,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 	// Handle an initial switch closure by backing off the switch
 	// (NOTE: this gets more complicated if switch pins are shared)
 	gpio_read_switches();				// sets gp.sw_flags
-	if (gpio_get_switch(axis) == true) {// test if the MIN switch for the axis is thrown
+	if (gpio_get_switch(axis_switch) == true) { // test if the MIN switch for the axis is thrown
 		_homing_axis_move(axis, hm.latch_backoff, hm.latch_velocity);
 	}
 	gpio_clear_switches();
@@ -213,7 +215,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 static uint8_t _homing_axis_search(int8_t axis)
 {
 	_homing_axis_move(axis, hm.search_travel, hm.search_velocity);
-	return (_set_hm_func(_homing_axis_latch_backoff));
+    return (_set_hm_func(_homing_axis_latch_backoff));
 }
 
 static uint8_t _homing_axis_latch_backoff(int8_t axis)
@@ -224,7 +226,7 @@ static uint8_t _homing_axis_latch_backoff(int8_t axis)
 
 static uint8_t _homing_axis_latch(int8_t axis)
 {
-	_homing_axis_move(axis, -2*hm.latch_backoff, hm.latch_velocity);
+	_homing_axis_move(axis, -2*hm.latch_backoff, hm.latch_velocity);    
 	return (_set_hm_func(_homing_axis_zero_backoff)); 
 }
 
@@ -259,7 +261,7 @@ static uint8_t _homing_finalize(int8_t axis)	// third part of return to home
 	cm_set_feed_rate(hm.feed_rate_saved);
 	cm.homing_state = HOMING_HOMED;
 	cm.cycle_state = CYCLE_STARTED;
-	cm_cycle_end();
+	cm_exec_cycle_end();
 	return (TG_OK);
 }
 
