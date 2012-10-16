@@ -181,6 +181,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 	if ((cfg.a[axis].search_velocity == 0) || (cfg.a[axis].travel_max == 0)) {
 		return (TG_GCODE_INPUT_ERROR);				// requested axis can't be homed
 	}
+
 	hm.axis = axis;
 	hm.search_velocity = fabs(cfg.a[axis].search_velocity); // search velocity is always positive
 	hm.latch_velocity = fabs(cfg.a[axis].latch_velocity); 	// and so is latch velocity
@@ -198,6 +199,10 @@ static uint8_t _homing_axis_start(int8_t axis)
 		hm.zero_backoff = -cfg.a[axis].zero_backoff;
         axis_switch += SW_OFFSET;   // check the max switch for backoffs
 	}
+
+    // if homing is disabled for an axis (switch mode == 0) just set the axis position to zero
+    if( cfg.a[axis].switch_mode == SW_MODE_DISABLED )
+        return (_set_hm_func(_homing_axis_set_zero));
 
 	// ---> For now all axes are single - no dual axis detection or invocation
 	// This is where you have to detect and handle dual axes.
