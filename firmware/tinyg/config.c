@@ -166,10 +166,14 @@ static uint8_t _get_sr(cmdObj *cmd);	// run status report (as data)
 static void _print_sr(cmdObj *cmd);		// run status report (as printout)
 static uint8_t _set_sr(cmdObj *cmd);	// set status report specification
 static uint8_t _set_si(cmdObj *cmd);	// set status report interval
+static uint8_t _get_qr(cmdObj *cmd);	// run queue report (as data)
+static uint8_t _get_pba(cmdObj *cmd);	// get planner buffers available
+
 static uint8_t _get_gc(cmdObj *cmd);	// get current gcode block
 static uint8_t _run_gc(cmdObj *cmd);	// run a gcode block
 
-static uint8_t _get_line(cmdObj *cmd);	// get runtime line nunmber
+static uint8_t _get_line(cmdObj *cmd);	// get runtime line number
+static uint8_t _get_lix(cmdObj *cmd);	// get runtime line index
 static uint8_t _get_stat(cmdObj *cmd);	// get combined machine state as value and string
 static uint8_t _get_macs(cmdObj *cmd);	// get raw machine state as value and string
 static uint8_t _get_cycs(cmdObj *cmd);	// get raw cycle state as value and string
@@ -331,10 +335,14 @@ static const char str_fb[] PROGMEM = "fb,firmware_b,[fb]  firmware_build%18.2f\n
 static const char str_id[] PROGMEM = "id,id,[id]  id_device%16d\n";
 static const char str_si[] PROGMEM = "si,status_i,[si]  status_interval    %10.0f ms [0=off]\n";
 static const char str_sr[] PROGMEM = "sr,status_r,";	// status_report {"sr":""}  and ? command
+static const char str_qr[] PROGMEM = "qr,queue_r,";		// queue_report {"qr":""}
+static const char str_pba[] PROGMEM = "pba,planner_buffer_a,Planner buffers:%8d\n";
+static const char str_pbc[] PROGMEM = "pbc,planner_buffer_c,";
 
 // Gcode model values for reporting purposes
-static const char str_vel[] PROGMEM = "vel,velocity,Velocity:%17.3f%S/min\n";
-static const char str_line[] PROGMEM = "line,line,Line number:%10.0f\n";
+static const char str_vel[]  PROGMEM = "vel,velocity,Velocity:%17.3f%S/min\n";
+static const char str_line[] PROGMEM = "line,line_n,Line number:%10.0f\n";
+static const char str_lix[]  PROGMEM = "lix,line_i,Line index:%13d\n";
 static const char str_feed[] PROGMEM = "feed,feed,Feed rate:%16.3f%S/min\n";
 static const char str_stat[] PROGMEM = "stat,stat,Machine state:       %s\n"; // combined machine state
 static const char str_macs[] PROGMEM = "macs,macs,Raw machine state:   %s\n"; // raw machine state
@@ -617,14 +625,18 @@ static const char str_h[] PROGMEM = "h,h,";			// help screen
 struct cfgItem const cfgArray[] PROGMEM = {
 
 //	 string *, print func, get func, set func  target for get/set,    default value
-	{ str_fb, _print_dbl, _get_dbl, _set_nul, (double *)&tg.build,    TINYG_BUILD_NUMBER },
-	{ str_fv, _print_dbl, _get_dbl, _set_nul, (double *)&tg.version,  TINYG_VERSION_NUMBER },
-	{ str_id, _print_int, _get_id,  _set_nul, (double *)&tg.null, 0}, 	// device ID (signature)
+	{ str_fb, _print_dbl, _get_dbl, _set_nul, (double *)&tg.build,   TINYG_BUILD_NUMBER }, // MUST BE FIRST!
+	{ str_fv, _print_dbl, _get_dbl, _set_nul, (double *)&tg.version, TINYG_VERSION_NUMBER },
+	{ str_id, _print_int, _get_id,  _set_nul, (double *)&tg.null, 0},	// device ID (signature)
 	{ str_si, _print_dbl, _get_int, _set_si,  (double *)&cfg.status_report_interval, STATUS_REPORT_INTERVAL_MS },
 	{ str_sr, _print_sr,  _get_sr,  _set_sr,  (double *)&tg.null, 0 },	// status report object
+	{ str_qr, _print_nul, _get_qr,  _set_nul, (double *)&tg.null, 0 },	// queue report object
+	{ str_pba,_print_int, _get_pba, _set_nul, (double *)&tg.null, 0 },	// planner buffers available
+//	{ str_pbc,_print_nul, _get_pba, _set_nul, (double *)&tg.null, 0 },	// planner buffer clear
 
 	// gcode model attributes for reporting puropses
-	{ str_line,_print_int, _get_line,_set_int, (double *)&gm.linenum, 0 },// line number - gets runtime line number
+	{ str_line,_print_int, _get_line,_set_int, (double *)&gm.linenum, 0 }, // line number - gets runtime line number
+	{ str_lix, _print_int, _get_lix, _set_int, (double *)&gm.lineindex,0 },// line index - gets runtime line index
 	{ str_feed,_print_lin, _get_dbu, _set_nul, (double *)&tg.null, 0 },	// feed rate
 	{ str_stat,_print_str, _get_stat,_set_nul, (double *)&tg.null, 0 },	// combined machine state
 	{ str_macs,_print_str, _get_macs,_set_nul, (double *)&tg.null, 0 },	// raw machine state
@@ -651,7 +663,7 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_mpoa,_print_pos, _get_mpos,_set_nul, (double *)&tg.null, 0 },	// A machine position
 	{ str_mpob,_print_pos, _get_mpos,_set_nul, (double *)&tg.null, 0 },	// B machine position
 	{ str_mpoc,_print_pos, _get_mpos,_set_nul, (double *)&tg.null, 0 },	// C machine position
-	{ str_g92x,_print_lin, _get_dbu, _set_nul, (double *)&gm.origin_offset[X], 0 },// G92 offset
+	{ str_g92x,_print_lin, _get_dbu, _set_nul, (double *)&gm.origin_offset[X], 0 },// G92 offsets
 	{ str_g92y,_print_lin, _get_dbu, _set_nul, (double *)&gm.origin_offset[Y], 0 },
 	{ str_g92z,_print_lin, _get_dbu, _set_nul, (double *)&gm.origin_offset[Z], 0 },
 	{ str_g92a,_print_rot, _get_dbl, _set_nul, (double *)&gm.origin_offset[A], 0 },
@@ -778,7 +790,6 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_cvm, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].velocity_max, 	C_VELOCITY_MAX },
 	{ str_cfr, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].feedrate_max, 	C_FEEDRATE_MAX },
 	{ str_ctm, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].travel_max,		C_TRAVEL_MAX },
-
 	{ str_cjm, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].jerk_max,			C_JERK_MAX },
 	{ str_cjd, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].junction_dev,		C_JUNCTION_DEVIATION },
 	{ str_cra, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].radius,			C_RADIUS },
@@ -932,7 +943,7 @@ static uint8_t _get_id(cmdObj *cmd)
 	return (TG_OK);
 }
 
-/**** STATUS REPORT FUNCTIONS ****
+/**** STATUS REPORT REPORT FUNCTIONS ****
  * _get_sr()   - run status report
  * _print_sr() - run status report
  * _set_sr()   - set status report specification
@@ -977,7 +988,23 @@ static uint8_t _set_si(cmdObj *cmd)
 	return(TG_OK);
 }
 
-/**** Reporting functions ****************************************
+/**** QUEUE REPORT FUNCTIONS ****
+ * _get_qr() - run queue report
+ */
+static uint8_t _get_qr(cmdObj *cmd) 
+{
+	rpt_run_queue_report();
+	return (TG_OK);
+}
+
+static uint8_t _get_pba(cmdObj *cmd)
+{
+	cmd->value = (double)mp_get_planner_buffers_available();
+	cmd->type = TYPE_INTEGER;
+	return (TG_OK);
+}
+
+/**** REPORTING FUNCTIONS ****************************************
  * _get_msg_helper() - helper to get display message
  * _get_stat() - get combined machine state as value and string
  * _get_macs() - get raw machine state as value and string
@@ -1080,6 +1107,13 @@ static uint8_t _get_line(cmdObj *cmd)
 	return (TG_OK);
 }
 
+static uint8_t _get_lix(cmdObj *cmd)
+{
+	cmd->value = (double)mp_get_runtime_lineindex();
+	cmd->type = TYPE_INTEGER;
+	return (TG_OK);
+}
+
 static uint8_t _get_vel(cmdObj *cmd) 
 {
 	cmd->value = mp_get_runtime_velocity();
@@ -1114,7 +1148,7 @@ static void _print_pos(cmdObj *cmd)
 	fprintf(stderr, _get_format(cmd->index,format), cmd->value, (const char*)pgm_read_word(&msg_units[units]));
 }
 
-/**** Gcode functions ****************************************/
+/**** GCODE FUNCTIONS ****************************************/
 /* _get_gc() - get gcode block
  * _run_gc() - launch the gcode parser on a block of gcode
  */
@@ -1642,7 +1676,7 @@ void cmd_clear_list()
 	// setup body objects
 	cmd_clear_body();
 
-	// setup footer objects (2)
+	// setup footer objects
 	cmd = cmd_status;
 	cmd_clear(cmd);								// "sc" element
 	sprintf_P(cmd->token, PSTR("sc"));
@@ -1651,26 +1685,26 @@ void cmd_clear_list()
 	cmd->nx = (cmd+1);
 	cmd->depth = 1;
 
-	cmd_clear(++cmd);							// "sm" element
-	sprintf_P(cmd->token, PSTR("sm"));
-	cmd->type = TYPE_STRING;
-	cmd->pv = (cmd-1);
-	cmd->nx = (cmd+1);
-	cmd->depth = 1;
+//	cmd_clear(++cmd);							// "sm" element
+//	sprintf_P(cmd->token, PSTR("sm"));
+//	cmd->type = TYPE_STRING;
+//	cmd->pv = (cmd-1);
+//	cmd->nx = (cmd+1);
+//	cmd->depth = 1;
 
-	cmd_clear(++cmd);							// "buf" element
-	sprintf_P(cmd->token, PSTR("buf"));
-	cmd->type = TYPE_INTEGER;
-	cmd->pv = (cmd-1);
-	cmd->nx = (cmd+1);
-	cmd->depth = 1;
+//	cmd_clear(++cmd);							// "buf" element
+//	sprintf_P(cmd->token, PSTR("buf"));
+//	cmd->type = TYPE_INTEGER;
+//	cmd->pv = (cmd-1);
+//	cmd->nx = (cmd+1);
+//	cmd->depth = 1;
 
-	cmd_clear(++cmd);							// "ln" element
-	sprintf_P(cmd->token, PSTR("ln"));
-	cmd->type = TYPE_INTEGER;
-	cmd->pv = (cmd-1);
-	cmd->nx = (cmd+1);
-	cmd->depth = 1;
+//	cmd_clear(++cmd);							// "ln" element
+//	sprintf_P(cmd->token, PSTR("ln"));
+//	cmd->type = TYPE_INTEGER;
+//	cmd->pv = (cmd-1);
+//	cmd->nx = (cmd+1);
+//	cmd->depth = 1;
 
 	cmd_clear(++cmd);							// "cks" element
 	sprintf_P(cmd->token, PSTR("cks"));
@@ -1796,9 +1830,9 @@ void cmd_print_list(uint8_t status, uint8_t textmode)
 	if (cfg.communications_mode == TG_JSON_MODE) {
 		cmdObj *cmd = cmd_status;
 		cmd->value = status;								// set status code
-		tg_get_status_message(status, (cmd = cmd->nx)->string); // set status message
-		(cmd = cmd->nx)->value = xio_get_usb_rx_free();		// set buffer available size
-		(cmd = cmd->nx)->value = cm_get_model_linenum();	// set model line number
+//		tg_get_status_message(status, (cmd = cmd->nx)->string); // set status message
+//		(cmd = cmd->nx)->value = xio_get_usb_rx_free();		// set buffer available size
+//		(cmd = cmd->nx)->value = cm_get_model_linenum();	// set model line number
 		uint16_t strcount = js_serialize_json(tg.out_buf);	// make JSON string w/o checksum
 		while (tg.out_buf[strcount] != ':') { strcount--; }	// slice at last colon
 		tg.out_buf[strcount] = NUL;
@@ -1850,7 +1884,7 @@ void _print_text_inline_values()
 		cmd = cmd->nx;
 		if (cmd->type != TYPE_END) {
 			fprintf_P(stderr,PSTR(","));
-		}		
+		}
 	}
 }
 
