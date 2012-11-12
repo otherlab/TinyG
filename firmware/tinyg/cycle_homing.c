@@ -197,7 +197,7 @@ static uint8_t _homing_axis_start(int8_t axis)
 		hm.search_travel = cfg.a[axis].travel_max;			// make search travel positive
 		hm.latch_backoff = -cfg.a[axis].latch_backoff;		// backoffs move opposite of search
 		hm.zero_backoff = -cfg.a[axis].zero_backoff;
-        axis_switch += SW_OFFSET;   // check the max switch for backoffs
+        axis_switch = axis + SW_OFFSET;                     // check the max switch for backoffs
 	}
 
     // if homing is disabled for an axis (switch mode == 0) just set the axis position to zero
@@ -209,11 +209,17 @@ static uint8_t _homing_axis_start(int8_t axis)
 
 	// Handle an initial switch closure by backing off the switch
 	// (NOTE: this gets more complicated if switch pins are shared)
+    gpio_clear_switches();
+    sw.lockout_count = 0;
+    
 	gpio_read_switches();				// sets gp.sw_flags
-	if (gpio_get_switch(axis_switch) == true) { // test if the MIN switch for the axis is thrown
+	if (gpio_get_switch(axis_switch) == true) { // test if the MIN/MAX switch for the axis is thrown
 		_homing_axis_move(axis, hm.latch_backoff, hm.latch_velocity);
 	}
+    
 	gpio_clear_switches();
+    sw.lockout_count = 0;
+    
 	return (_set_hm_func(_homing_axis_search));
 }
 
