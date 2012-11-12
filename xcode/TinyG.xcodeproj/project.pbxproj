@@ -449,7 +449,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = /Users/mikest/github/TinyG/firmware/tinyg/default;
+			buildWorkingDirectory = "$(PROJECT_DIR)/../firmware/tinyg/default";
 			dependencies = (
 			);
 			name = TinyG;

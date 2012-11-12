@@ -5,10 +5,9 @@
 ## General Flags
 PROJECT = tinyg
 MCU = atxmega256a3
-<<<<<<< HEAD
 PROG_MCU = x256a3
-=======
->>>>>>> eccecadd9027e6d06e9a4cbebefcb6d6417d0bbd
+#MCU = atxmega192a3
+#PROG_MCU = x192a3
 TARGET = tinyg.elf
 CC = avr-gcc
 
@@ -55,7 +54,7 @@ all: $(TARGET) tinyg.hex tinyg.eep tinyg.lss size
 
 ## Install
 install: tinyg.hex
-	avrdude -p x256a3 -c avrispmkII -P usb -Uflash:w:tinyg.hex
+	avrdude -p $(PROG_MCU) -c avrispmkII -P usb -Uflash:w:tinyg.hex
 
 ## Compile
 util.o: ../util.c
@@ -170,13 +169,6 @@ size: ${TARGET}
 ## Clean target.PHONY: clean
 clean:
 	-rm -rf $(OBJECTS) tinyg.elf dep/* tinyg.hex tinyg.eep tinyg.lss tinyg.map
-
-<<<<<<< HEAD
-## Install
-install: tinyg.hex
-	avrdude -p $(PROG_MCU) -c avrispmkII -P usb -Uflash:w:tinyg.hex
-=======
->>>>>>> eccecadd9027e6d06e9a4cbebefcb6d6417d0bbd
 
 ## Other dependencies
 -include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)
