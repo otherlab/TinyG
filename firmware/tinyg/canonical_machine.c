@@ -90,6 +90,7 @@ uint8_t cm_get_distance_mode() { return gm.distance_mode;}
 uint8_t cm_get_inverse_feed_rate_mode() { return gm.inverse_feed_rate_mode;}
 uint8_t cm_get_spindle_mode() { return gm.spindle_mode;} 
 uint32_t cm_get_model_linenum() { return gm.linenum;}
+uint32_t cm_get_model_lineindex() { return gm.lineindex;}
 uint8_t cm_isbusy() { return (mp_isbusy());}
 
 // set parameters in gm struct
@@ -119,8 +120,6 @@ uint8_t cm_get_combined_state()
 	}
 	return cm.combined_state;
 }
-
-
 
 /* Position and Offset getters
  *
@@ -203,6 +202,8 @@ double cm_get_runtime_work_position(uint8_t axis)
  * cm_set_arc_offset()	- set all IJK offsets
  * cm_set_radius()		- set radius value
  * cm_set_model_linenum() - set line number in the model (this is NOT the runtime line number)
+ * cm_set_model_lineindex() - set line index in the model (this is NOT the runtime line index)
+ * cm_incr_model_lineindex() - increment line index in the model (this is NOT the runtime line index)
  * cm_set_target()		- set all XYZABC targets
  */
 
@@ -225,6 +226,16 @@ void cm_set_model_linenum(uint32_t linenum)
 	} else {
 		gm.linenum++;			// autoincrement if no line number
 	}
+}
+
+void cm_set_model_lineindex(uint32_t lineindex)
+{
+	gm.lineindex = lineindex;
+}
+
+void cm_incr_model_lineindex()
+{
+	gm.lineindex++;
 }
 
 /* 
@@ -405,6 +416,40 @@ void cm_set_gcode_model_endpoint_position(uint8_t status)
  *	  -	time for coordinated move at requested feed rate
  *	  -	time that the slowest axis would require for the move
  */
+/* The following is verbatim text from NIST RS274NGC_v3. As I interpret A for 
+ * moves that combine both linear and rotational movement, the feed rate should
+ * apply to the XYZ movement, with the rotational axis (or axes) timed to start
+ * and end at the same time the linear move is performed. It is possible under 
+ * this case for the rotational move to rate-limit the linear move.
+ *
+ * 	2.1.2.5 Feed Rate
+ *
+ *	The rate at which the controlled point or the axes move is nominally a steady 
+ *	rate which may be set by the user. In the Interpreter, the interpretation of 
+ *	the feed rate is as follows unless inverse time feed rate mode is being used 
+ *	in the RS274/NGC view (see Section 3.5.19). The canonical machining functions 
+ *	view of feed rate, as described in Section 4.3.5.1, has conditions under which 
+ *	the set feed rate is applied differently, but none of these is used in the 
+ *	Interpreter.
+ *
+ *	A. 	For motion involving one or more of the X, Y, and Z axes (with or without 
+ *		simultaneous rotational axis motion), the feed rate means length units 
+ *		per minute along the programmed XYZ path, as if the rotational axes were 
+ *		not moving.
+ *
+ *	B.	For motion of one rotational axis with X, Y, and Z axes not moving, the 
+ *		feed rate means degrees per minute rotation of the rotational axis.
+ *
+ *	C.	For motion of two or three rotational axes with X, Y, and Z axes not moving, 
+ *		the rate is applied as follows. Let dA, dB, and dC be the angles in degrees 
+ *		through which the A, B, and C axes, respectively, must move. 
+ *		Let D = sqrt(dA^2 + dB^2 + dC^2). Conceptually, D is a measure of total 
+ *		angular motion, using the usual Euclidean metric. Let T be the amount of 
+ *		time required to move through D degrees at the current feed rate in degrees 
+ *		per minute. The rotational axes should be moved in coordinated linear motion 
+ *		so that the elapsed time from the start to the end of the motion is T plus 
+ *		any time required for acceleration or deceleration.
+ */
 
 static double _get_move_time()
 {
@@ -421,11 +466,12 @@ static double _get_move_time()
 		} else {
 			xyz_time = sqrt(square(gm.target[X] - gm.position[X]) + // in mm
 							square(gm.target[Y] - gm.position[Y]) +
-							square(gm.target[Z] - gm.position[Z])) / gm.feed_rate;
-
-			abc_time = sqrt(square(gm.target[A] - gm.position[A]) + // in deg
+							square(gm.target[Z] - gm.position[Z])) / gm.feed_rate; // in linear units
+			if (xyz_time == 0) {
+				abc_time = sqrt(square(gm.target[A] - gm.position[A]) + // in deg
 							square(gm.target[B] - gm.position[B]) +
-							square(gm.target[C] - gm.position[C])) / gm.feed_rate;
+							square(gm.target[C] - gm.position[C])) / gm.feed_rate; // in degree units
+			}
 		}
 	}
  	for (i=0; i<AXES; i++) {
@@ -874,7 +920,7 @@ void _exec_program_finalize(uint8_t machine_state)
 	cm.hold_state = FEEDHOLD_OFF;		//...and any feedhold is ended
 	cm.cycle_start_flag = false;
 	mp_zero_segment_velocity();			// for reporting purposes
-	rpt_queue_status_report();			// queue final status report (if enabled)
+	rpt_request_status_report();		// request final status report (if enabled)
 	cmd_persist_offsets(cm.g10_flag);	// persist offsets (if any changes made)
 }
 

@@ -52,6 +52,6 @@
 //#include "settings/settings_probotixV90.h"		// Probotix FireballV90
 //#include "settings/settings_lumenlabMicRoV3.h"	// Lumenlabs micRo v3
 //#include "settings/settings_sacidu93.h"			// related to Issue #12
-#include "settings/settings_otherlab.h"			// Othwrlab Cardboard cutter
+#include "settings/settings_otherlab.h"			// Otherlab Cardboard cutter
 
 #endif

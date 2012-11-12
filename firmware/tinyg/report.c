@@ -28,7 +28,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-//#include <math.h>
 #include <string.h>
 #include <avr/pgmspace.h>
 
@@ -43,6 +42,8 @@
 #include "report.h"
 #include "xio/xio.h"
 #include "xmega/xmega_rtc.h"
+#include "gpio.h"
+
 
 /*****************************************************************************
  * Status Reports
@@ -109,7 +110,7 @@ void rpt_init_status_report(uint8_t persist_flag)
 			cmd.index++;
 		}
 	}
-	for (; i < CMD_STATUS_REPORT_LEN; i++) {	// fill rest of spec with -1
+	for (; i < CMD_STATUS_REPORT_LEN; i++) {		// fill rest of spec with -1
 		cmd.value = -1;
 		cfg.status_report_spec[i] = cmd.value;
 		if (persist_flag == true) {
@@ -121,7 +122,7 @@ void rpt_init_status_report(uint8_t persist_flag)
 }
 
 /*	rpt_decr_status_report()  	 - decrement status report counter
- *	rpt_queue_status_report() 	 - force a status report to be sent on next callback
+ *	rpt_request_status_report()  - force a status report to be sent on next callback
  *	rpt_status_report_callback() - main loop callback to send a report if one is ready
  *	rpt_run_multiline_status_report() - generate a status report in multiline format
  *	rpt_run_status_report()	  	 - populate cmdObj body with status values
@@ -131,7 +132,7 @@ void rpt_decr_status_report()
 	if (cm.status_report_counter != 0) cm.status_report_counter--; // stick at zero
 }
 
-void rpt_queue_status_report()
+void rpt_request_status_report()
 {
 	cm.status_report_counter = 0; // report will be called from controller dispatcher
 }
@@ -173,6 +174,99 @@ uint8_t rpt_populate_status_report()
 	return (TG_OK);
 }
 
+/*****************************************************************************
+ * Queue Reports
+ *
+ * rpt_request_queue_report()	- request a queue report with current values
+ * rpt_queue_report_callback()	- run the queue report w/stored values
+ * rpt_run_queue_report() 		- run a queue report right now
+ *
+ *	Queue reports return 
+ *		[lix] - line index 
+ *		[pba] - planner buffers available 
+ */
+
+struct qrIndexes {			// static data for queue reports
+	uint8_t request;		// set to true to request a report
+	INDEX_T qr;				// index for QR parent
+	INDEX_T lix;			// index for line index
+	INDEX_T pba;			// index for planner_buffer_available value
+	uint32_t lineindex;
+	uint8_t buffers_available;
+};
+struct qrIndexes qr = { 0,0,0,0,0,0 };		// init to zeros
+
+void rpt_request_queue_report() 
+{ 
+	qr.lineindex = mp_get_runtime_lineindex();
+	qr.buffers_available = mp_get_planner_buffers_available();
+	qr.request = true;
+
+#if 1
+    if( qr.buffers_available == PLANNER_BUFFER_POOL_SIZE )
+        gpio_set_bit_on(0x1 | 0x2);                    // turn on all LEDs, starved
+    else
+        gpio_set_bit_off(0x1 | 0x2);                    // turn off all LEDs
+
+    if( qr.buffers_available == 0 )
+        gpio_set_bit_on(0x4 | 0x8);                    // turn on all LEDs, full
+    else
+        gpio_set_bit_off(0x4 | 0x8);                    // turn off all LEDs
+#endif
+}
+
+uint8_t rpt_queue_report_callback()
+{
+	if (qr.request != true) { return (TG_NOOP);}
+
+	cmdObj *cmd = cmd_body;
+	cmd_clear(cmd);			 				// parent qr object			
+	sprintf_P(cmd->token, PSTR("qr"));
+	cmd->type = TYPE_PARENT;
+
+	cmd = cmd->nx;							// line index
+	sprintf_P(cmd->token, PSTR("lix"));
+	cmd->value = qr.lineindex;
+	cmd->type = TYPE_INTEGER;
+	cmd->depth++;
+
+	cmd = cmd->nx;							// planner buffers available
+	sprintf_P(cmd->token, PSTR("pba"));
+	cmd->value = qr.buffers_available;
+	cmd->type = TYPE_INTEGER;
+	cmd->depth++;
+
+	cmd_print_list(TG_OK, TEXT_INLINE_PAIRS);// report in JSON or inline text mode
+	qr.request = false;
+	return (TG_OK);
+}
+
+uint8_t rpt_run_queue_report()
+{
+	cmdObj *cmd = cmd_body;
+
+	if (qr.qr == 0) {					// cache the report indices
+		qr.qr = cmd_get_index("qr");	// this only happens once
+		qr.lix = cmd_get_index("lix");
+		qr.pba = cmd_get_index("pba");
+	}
+
+	cmd_clear(cmd);			 			// setup the parent object			
+	cmd->type = TYPE_PARENT;
+	cmd->index = qr.qr;
+	sprintf_P(cmd->token, PSTR("qr"));
+
+	cmd = cmd->nx;
+	cmd->index = qr.lix;				// line index element
+	cmd_get_cmdObj(cmd);
+
+	cmd = cmd->nx;
+	cmd->index = qr.pba;				// planner buffers available element
+	cmd_get_cmdObj(cmd);
+
+	return (TG_OK);
+}
+
 /****************************************************************************
  ***** Report Unit Tests ****************************************************
  ****************************************************************************/
@@ -185,6 +279,5 @@ void sr_unit_tests(void)
 	tg.communications_mode = TG_JSON_MODE;
 	sr_run_status_report();
 }
-
 
 #endif
