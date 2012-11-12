@@ -4,7 +4,7 @@
 
 ## General Flags
 PROJECT = tinyg
-MCU = atxmega192a3
+MCU = atxmega256a3
 TARGET = tinyg.elf
 CC = avr-gcc
 
@@ -49,6 +49,9 @@ LINKONLYOBJECTS =
 ## Build
 all: $(TARGET) tinyg.hex tinyg.eep tinyg.lss size
 
+## Install
+install: tinyg.hex
+	avrdude -p x256a3 -c avrispmkII -P usb -Uflash:w:tinyg.hex
 
 ## Compile
 util.o: ../util.c
@@ -164,9 +167,6 @@ size: ${TARGET}
 clean:
 	-rm -rf $(OBJECTS) tinyg.elf dep/* tinyg.hex tinyg.eep tinyg.lss tinyg.map
 
-## Install
-install: tinyg.hex
-	avrdude -p x256a3 -c avrispmkII -P usb -Uflash:w:tinyg.hex
 
 ## Other dependencies
 -include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)

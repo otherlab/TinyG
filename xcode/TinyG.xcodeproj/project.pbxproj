@@ -278,10 +278,10 @@
 				20A7D6AD1624ECA000D083B2 /* gpio.h */,
 				20A7D6AE1624ECA000D083B2 /* help.c */,
 				20A7D6AF1624ECA000D083B2 /* help.h */,
+				20A7D6B31624ECA000D083B2 /* kinematics.h */,
 				20A7D6B01624ECA000D083B2 /* json_parser.c */,
 				20A7D6B11624ECA000D083B2 /* json_parser.h */,
 				20A7D6B21624ECA000D083B2 /* kinematics.c */,
-				20A7D6B31624ECA000D083B2 /* kinematics.h */,
 				20A7D6B41624ECA000D083B2 /* main.c */,
 				20A7D6B51624ECA000D083B2 /* network.c */,
 				20A7D6B61624ECA000D083B2 /* network.h */,
@@ -739,6 +739,7 @@
 				20A7D74D16264DBA00D083B2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
