@@ -85,9 +85,9 @@
 #define X_JUNCTION_DEVIATION			JUNCTION_DEVIATION	// xjd
 #define X_SWITCH_MODE 					1					// xsm		1=switches enabled for homing only
 #define X_SEARCH_VELOCITY 				-2000				// xsv		move in negative direction
-#define X_LATCH_VELOCITY 				100					// xlv		mm/min
-#define X_LATCH_BACKOFF 				9					// xlb		mm
-#define X_ZERO_BACKOFF 					1					// xzb		mm
+#define X_LATCH_VELOCITY 				500					// xlv		mm/min
+#define X_LATCH_BACKOFF 				12					// xlb		mm
+#define X_ZERO_BACKOFF 					5					// xzb		mm
 
 #define Y_AXIS_MODE 					AXIS_STANDARD
 #define Y_VELOCITY_MAX 					15000
@@ -99,7 +99,7 @@
 #define Y_SEARCH_VELOCITY 				-1000
 #define Y_LATCH_VELOCITY 				1000
 #define Y_LATCH_BACKOFF 				1
-#define Y_ZERO_BACKOFF 					1
+#define Y_ZERO_BACKOFF 					0
 
 #define Z_AXIS_MODE 					AXIS_STANDARD
 #define Z_VELOCITY_MAX 					10000
@@ -110,7 +110,7 @@
 #define Z_SWITCH_MODE 					1
 #define Z_SEARCH_VELOCITY 				1000.0
 #define Z_LATCH_VELOCITY 				500.0
-#define Z_LATCH_BACKOFF 				9
+#define Z_LATCH_BACKOFF 				12
 #define Z_ZERO_BACKOFF 					20.5        // based on blade geometry
 
 #define A_AXIS_MODE 					AXIS_STANDARD

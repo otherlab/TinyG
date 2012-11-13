@@ -201,18 +201,6 @@ void rpt_request_queue_report()
 	qr.lineindex = mp_get_runtime_lineindex();
 	qr.buffers_available = mp_get_planner_buffers_available();
 	qr.request = true;
-
-#if 1
-    if( qr.buffers_available == PLANNER_BUFFER_POOL_SIZE )
-        gpio_set_bit_on(0x1 | 0x2);                    // turn on all LEDs, starved
-    else
-        gpio_set_bit_off(0x1 | 0x2);                    // turn off all LEDs
-
-    if( qr.buffers_available == 0 )
-        gpio_set_bit_on(0x4 | 0x8);                    // turn on all LEDs, full
-    else
-        gpio_set_bit_off(0x4 | 0x8);                    // turn off all LEDs
-#endif
 }
 
 uint8_t rpt_queue_report_callback()

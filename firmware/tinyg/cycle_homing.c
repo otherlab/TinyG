@@ -38,8 +38,8 @@
 #include "gpio.h"
 
 /**** NOTE: global prototypes and other .h info is located in canonical_machine.h ****/
-
 static uint8_t _homing_axis_start(int8_t axis);
+static uint8_t _homing_axis_initial_backoff(int8_t axis);
 static uint8_t _homing_axis_search(int8_t axis);
 static uint8_t _homing_axis_latch_backoff(int8_t axis);
 static uint8_t _homing_axis_latch(int8_t axis);
@@ -213,14 +213,16 @@ static uint8_t _homing_axis_start(int8_t axis)
     sw.lockout_count = 0;
     
 	gpio_read_switches();				// sets gp.sw_flags
-	if (gpio_get_switch(axis_switch) == true) { // test if the MIN/MAX switch for the axis is thrown
-		_homing_axis_move(axis, hm.latch_backoff, hm.latch_velocity);
-	}
-    
-	gpio_clear_switches();
-    sw.lockout_count = 0;
-    
-	return (_set_hm_func(_homing_axis_search));
+	if (gpio_get_switch(axis_switch) == true) // test if the MIN/MAX switch for the axis is thrown
+		return (_set_hm_func(_homing_axis_initial_backoff));
+    else    
+        return (_set_hm_func(_homing_axis_search));
+}
+
+static uint8_t _homing_axis_initial_backoff(int8_t axis)
+{
+    _homing_axis_move(axis, hm.latch_backoff, hm.latch_velocity);
+    return (_set_hm_func(_homing_axis_search));
 }
 
 static uint8_t _homing_axis_search(int8_t axis)
