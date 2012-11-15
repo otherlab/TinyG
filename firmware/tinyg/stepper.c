@@ -17,7 +17,6 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -164,7 +163,6 @@
 #include "stepper.h" 	
 #include "planner.h"
 #define MOTOR_POWER_ON_MOVE 1   // enable all motor power when moving any axis
-
 
 static void _exec_move(void);
 static void _load_move(void);
@@ -357,8 +355,8 @@ ISR(TIMER_DDA_ISR_vect)
 		}
 		if (cfg.m[MOTOR_4].power_mode == true) {
 			PORT_MOTOR_4_VPORT.OUT |= MOTOR_ENABLE_BIT_bm; 
-#endif
 		}
+#endif
 		_load_move();							// load the next move
 	}
 #else
@@ -405,6 +403,7 @@ ISR(TIMER_DDA_ISR_vect)
 		if (cfg.m[MOTOR_4].power_mode == true) {
 			PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm; 
 		}
+#endif
 		_load_move();							// load the next move
 	}
 #endif
@@ -592,14 +591,14 @@ void _load_move()
 					device.port[i]->OUTCLR = DIRECTION_BIT_bm;	// CW motion
 				} else {
 					device.port[i]->OUTSET = DIRECTION_BIT_bm;	// CCW motion
-#if !MOTOR_POWER_ON_MOVE
 				}
-#endif
+#if !MOTOR_POWER_ON_MOVE
 				device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;	// enable motor
+#endif
+			}
 #if MOTOR_POWER_ON_MOVE
             device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;   // enable all motors
 #endif
-			}
 		}
 		TIMER_DDA.CTRLA = STEP_TIMER_ENABLE;					// enable the DDA timer
 

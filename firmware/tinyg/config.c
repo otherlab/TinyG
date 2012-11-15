@@ -17,7 +17,6 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -106,7 +105,7 @@
 #include "system.h"
 #include "xio/xio.h"
 #include "xmega/xmega_eeprom.h"
-typedef char PROGMEM *prog_char_ptr;	// access to PROGMEM arrays of PROGMEM strings
+
 typedef char PROGMEM *prog_char_ptr;	// access to PROGMEM arrays of PROGMEM strings
 
 //*** STATIC STUFF ***********************************************************
@@ -145,7 +144,7 @@ static uint8_t _cmd_index_is_single(uint8_t index);
 static uint8_t _cmd_index_is_group(uint8_t index);
 static uint8_t _cmd_index_is_uber_group(uint8_t index);
 
-static char * _get_format(const INDEX_T i, char *format);
+// helpers
 static char *_get_format(const INDEX_T i, char *format);
 //static int8_t _get_axis(const INDEX_T i);
 static int8_t _get_position_axis(const INDEX_T i);
@@ -346,15 +345,6 @@ static const char str_si[] PROGMEM = "si,status_i,[si]  status_interval    %10.0
 static const char str_sr[] PROGMEM = "sr,status_r,";	// status_report {"sr":""}  and ? command
 static const char str_qr[] PROGMEM = "qr,queue_r,";		// queue_report {"qr":""}
 static const char str_pb[] PROGMEM = "pb,planner_buffer_a,Planner buffers:%8d\n";
-static const char str_fv[] PROGMEM = "fv,firmware_v,[fv]  firmware_version%16.2f\n";
-static const char str_fb[] PROGMEM = "fb,firmware_b,[fb]  firmware_build%18.2f\n";
-static const char str_id[] PROGMEM = "id,id,[id]  id_device%16d\n";
-static const char str_si[] PROGMEM = "si,status_i,[si]  status_interval    %10.0f ms [0=off]\n";
-static const char str_sr[] PROGMEM = "sr,status_r,";	// status_report {"sr":""}  and ? command
-static const char str_qr[] PROGMEM = "qr,queue_r,";		// queue_report {"qr":""}
-static const char str_pba[] PROGMEM = "pba,planner_buffer_a,Planner buffers:%8d\n";
-static const char str_pbc[] PROGMEM = "pbc,planner_buffer_c,";
-
 
 // Gcode model values for reporting purposes
 static const char str_vel[]  PROGMEM = "vel,velocity,Velocity:%17.3f%S/min\n";
@@ -534,7 +524,6 @@ static const char str_p4pl[] PROGMEM = "p4pl,p_ccw_p_lo,[p4pl] pwm_ccw_phase_lo 
 static const char str_p4ph[] PROGMEM = "p4ph,p_ccw_p_hi,[p4ph] pwm_ccw_phase_hi          %4.3f [0..1]\n";
 static const char str_p5of[] PROGMEM =      "p5of,p_off,[p5of] pwm_phase_off             %4.3f [0..1]\n";
 
-
 // Coordinate system offset groups
 static const char str_g54x[] PROGMEM = "g54x,g54_x,[g54x] g54_x_offset%20.3f%S\n";
 static const char str_g54y[] PROGMEM = "g54y,g54_y,[g54y] g54_y_offset%20.3f%S\n";
@@ -600,6 +589,7 @@ static const char str_sr17[] PROGMEM = "sr17,sr17,";
 static const char str_sr18[] PROGMEM = "sr18,sr18,";
 static const char str_sr19[] PROGMEM = "sr19,sr19,";
 
+// Group strings
 static const char str_1[] PROGMEM = "1,1,";			// motor groups
 static const char str_2[] PROGMEM = "2,2,";
 static const char str_3[] PROGMEM = "3,3,";
@@ -621,7 +611,6 @@ static const char str_g92[] PROGMEM = "g92,g92,";	// origin offsets
 static const char str_sys[] PROGMEM = "sys,sys,";	// system group
 static const char str_s[] PROGMEM = "s,s,";			// system group alias
 static const char str_pos[] PROGMEM = "pos,pos,";	// work position group
-static const char str_mpo[] PROGMEM = "mpo,mpo,";	// machine position group
 static const char str_mpo[] PROGMEM = "mpo,mpo,";	// machine position group
 
 // groups of groups (for text-mode display only)
@@ -828,7 +817,6 @@ struct cfgItem const cfgArray[] PROGMEM = {
     { str_p4ph, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_phase_hi,       C_CCW_PHASE_HI },
     { str_p5of, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.phase_off,          C_PWM_PHASE_OFF },
 
-
 	// coordinate system offsets
 	{ str_g54x, _print_lin, _get_dbu, _set_dbu,(double *)&cfg.offset[G54][X], G54_X_OFFSET },
 	{ str_g54y, _print_lin, _get_dbu, _set_dbu,(double *)&cfg.offset[G54][Y], G54_Y_OFFSET },
@@ -894,6 +882,7 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_sr18, _print_nul, _get_int, _set_int,(double *)&cfg.status_report_spec[18],0 },
 	{ str_sr19, _print_nul, _get_int, _set_int,(double *)&cfg.status_report_spec[19],0 },
 	
+	// group lookups - must follow the single-valued entries for proper sub-string matching
 	{ str_sys, _print_nul, _get_sys, _set_grp,(double *)&tg.null,0 },	// system group 	   (must be 1st)
 	{ str_s, _print_nul, _get_sys, _set_grp,(double *)&tg.null,0 },		// alias for sys group (must be 2nd)
 	{ str_1, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },		// motor groups
@@ -916,7 +905,6 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_g92, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// origin offsets
 	{ str_pos, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// work position group
 	{ str_mpo, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// machine position group
-	{ str_mpo, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// machine position group
 
 	// uber-group (groups of groups, for text-mode displays only)
 	{ str_moto, _print_nul, _do_motors, _set_nul,(double *)&tg.null,0 },
@@ -932,8 +920,8 @@ struct cfgItem const cfgArray[] PROGMEM = {
 #define CMD_INDEX_MAX (sizeof cfgArray / sizeof(struct cfgItem))
 
 // hack alert. Find a better way to do this
+#define CMD_COUNT_STATUS 20		// number of status report persistence elements - see final array [index]
 #define CMD_COUNT_GROUPS 23		// count of simple groups
-#define CMD_COUNT_UBER_GROUPS 4 // count of uber-groups
 #define CMD_COUNT_UBER_GROUPS 4 // count of uber-groups
 
 #define CMD_INDEX_END_SINGLES (CMD_INDEX_MAX - CMD_COUNT_STATUS - CMD_COUNT_GROUPS - CMD_COUNT_UBER_GROUPS)
@@ -1045,7 +1033,7 @@ static uint8_t _get_pb(cmdObj *cmd)
  * _get_pos()  - get runtime work position
  * _get_mpos() - get runtime machine position
  * _print_pos()- print work or machine position
-static uint8_t _get_msg_helper(cmdObj *cmd, prog_char_ptr msg, uint8_t value)
+ */
 static uint8_t _get_msg_helper(cmdObj *cmd, prog_char_ptr msg, uint8_t value)
 {
 	cmd->value = (double)value;
@@ -1056,7 +1044,7 @@ static uint8_t _get_msg_helper(cmdObj *cmd, prog_char_ptr msg, uint8_t value)
 }
 
 static uint8_t _get_stat(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_stat, cm_get_combined_state()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_stat, cm_get_combined_state()));
 
 /* how to do this w/o calling the helper routine - See 331.09 for original routines
@@ -1073,52 +1061,52 @@ static uint8_t _get_macs(cmdObj *cmd)
 }
 
 static uint8_t _get_cycs(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_cycs, cm_get_cycle_state()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_cycs, cm_get_cycle_state()));
 }
 
 static uint8_t _get_mots(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_mots, cm_get_motion_state()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_mots, cm_get_motion_state()));
 }
 
 static uint8_t _get_hold(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_hold, cm_get_hold_state()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_hold, cm_get_hold_state()));
 }
 
 static uint8_t _get_unit(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_unit, cm_get_units_mode()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_unit, cm_get_units_mode()));
 }
 
 static uint8_t _get_coor(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_coor, cm_get_coord_system()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_coor, cm_get_coord_system()));
 }
 
 static uint8_t _get_momo(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_momo, cm_get_motion_mode()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_momo, cm_get_motion_mode()));
 }
 
 static uint8_t _get_plan(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_plan, cm_get_select_plane()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_plan, cm_get_select_plane()));
 }
 
 static uint8_t _get_path(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_path, cm_get_path_control()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_path, cm_get_path_control()));
 }
 
 static uint8_t _get_dist(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_dist, cm_get_distance_mode()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_dist, cm_get_distance_mode()));
 }
 
 static uint8_t _get_frmo(cmdObj *cmd)
-	return(_get_msg_helper(cmd, (prog_char_ptr)msg_frmo, cm_get_inverse_feed_rate_mode()));
+{
 	return(_get_msg_helper(cmd, (prog_char_ptr)msg_frmo, cm_get_inverse_feed_rate_mode()));
 }
 
@@ -1173,7 +1161,7 @@ static void _print_pos(cmdObj *cmd)
 	char format[CMD_FORMAT_LEN+1];
 	if (axis < A) { 
 		units = cm_get_units_mode();
-	fprintf(stderr, _get_format(cmd->index,format), cmd->value, (PGM_P)pgm_read_word(&msg_units[units]));
+	}
 	fprintf(stderr, _get_format(cmd->index,format), cmd->value, (PGM_P)pgm_read_word(&msg_units[units]));
 }
 
@@ -1243,7 +1231,7 @@ static uint8_t _set_am(cmdObj *cmd)
 static void _print_am(cmdObj *cmd)
 {
 	cmd_get(cmd);
-	fprintf(stderr, _get_format(cmd->index, format), (uint8_t)cmd->value, (PGM_P)pgm_read_word(&msg_am[(uint8_t)cmd->value]));
+	char format[CMD_FORMAT_LEN+1];
 	fprintf(stderr, _get_format(cmd->index, format), (uint8_t)cmd->value, (PGM_P)pgm_read_word(&msg_am[(uint8_t)cmd->value]));
 }
 
@@ -1652,7 +1640,7 @@ INDEX_T cmd_get_index(const char *str)
 	char *friendly_name;
 	char token[CMD_NAMES_FIELD_LEN];
 
-		strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i]), CMD_NAMES_FIELD_LEN);
+	for (INDEX_T i=0; i<CMD_INDEX_MAX; i++) {
 		strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i]), CMD_NAMES_FIELD_LEN);
 		friendly_name = strstr(token,",");	// find the separating comma
 		*(friendly_name++) = NUL;			// split token & name strings, terminate token string
@@ -1670,7 +1658,7 @@ char *cmd_get_token(const INDEX_T i, char *token)
 	if ((i < 0) || (i >= CMD_INDEX_MAX)) { 
 		*token = NUL;
 		return (token);
-	strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
+	}
 	strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
 	char *ptr = strstr(token,",");			// find the first separating comma
 	*ptr = NUL;								// terminate the string after the token
@@ -1683,7 +1671,7 @@ char cmd_get_group(const INDEX_T i)
 	char chr;
 	char groups[] = {"xyzabc1234"};
 
-	strncpy_P(&chr,(PGM_P)pgm_read_word(&cfgArray[i].string), 1);
+	if ((i < 0) || (i >= CMD_INDEX_MAX)) return (NUL);
 	strncpy_P(&chr,(PGM_P)pgm_read_word(&cfgArray[i].string), 1);
 	if ((ptr = strchr(groups, chr)) == NULL) {
 		return ('s');
@@ -2038,14 +2026,14 @@ static void _print_dbl(cmdObj *cmd)
 static void _print_lin(cmdObj *cmd)
 {
 	cmd_get(cmd);
-	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[cm_get_units_mode()]));
+	char format[CMD_FORMAT_LEN+1];
 	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[cm_get_units_mode()]));
 }
 
 static void _print_rot(cmdObj *cmd)
 {
 	cmd_get(cmd);
-	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[2]));
+	char format[CMD_FORMAT_LEN+1];
 	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[2]));
 }
 
@@ -2061,7 +2049,7 @@ static char *_get_format(const INDEX_T i, char *format)
 {
 	char *ptr;
 	char tmp[CMD_STRING_FIELD_LEN];
-	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_STRING_FIELD_LEN);
+
 	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_STRING_FIELD_LEN);
 	ptr = strstr(tmp,",");					// find the first separating comma
 	ptr = strstr(++ptr,",");				// find the second comma
@@ -2076,7 +2064,7 @@ static int8_t _get_position_axis(const INDEX_T i)
 	char *ptr;
 	char tmp[CMD_TOKEN_LEN];
 	char axes[] = {"xyzabc"};
-	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),CMD_TOKEN_LEN);
+
 	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),CMD_TOKEN_LEN);
 	if ((ptr = strchr(axes, tmp[3])) == NULL) { return (-1);}
 	return (ptr - axes);
@@ -2087,7 +2075,7 @@ static int8_t _get_axis(const INDEX_T i)
 	char tmp;
 	char *ptr;
 	char axes[] = {"xyzabc"};
-	strncpy_P(&tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),1);
+
 	strncpy_P(&tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),1);
 	if ((ptr = strchr(axes, tmp)) == NULL) {
 		return (-1);
@@ -2100,7 +2088,7 @@ static int8_t _get_motor(const INDEX_T i)
 	char *ptr;
 	char motors[] = {"1234"};
 	char tmp[CMD_TOKEN_LEN+1];
-	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
+
 	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
 	if ((ptr = strchr(motors, tmp[0])) == NULL) {
 		return (-1);

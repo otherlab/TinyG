@@ -227,16 +227,6 @@ void cm_set_model_linenum(uint32_t linenum)
 	}
 }
 
-void cm_set_model_lineindex(uint32_t lineindex)
-{
-	gm.lineindex = lineindex;
-}
-
-void cm_incr_model_lineindex()
-{
-	gm.lineindex++;
-}
-
 /* 
  * cm_set_target() - set target vector in GM model
  *
@@ -271,7 +261,7 @@ void cm_incr_model_lineindex()
  *	Axes that need processing are signaled in flag[]
  *	All that flag checking in the slaves traps erroneous rotary inputs
  */
-static double _calc_ABC(uint8_t i, double target[], double flag[]);
+double _calc_ABC(uint8_t i, double target[], double flag[]);
 
 void cm_set_target(double target[], double flag[])
 { 
@@ -347,7 +337,7 @@ void cm_set_target(double target[], double flag[])
 // ESTEE: fix to workaround a gcc compiler bug wherein it runs out of spill registers
 // we move this block into its own function so that we get a fresh stack push
 // ALDEN: This shows up in avr-gcc 4.7.0 and avr-libc 1.8.0
-static double _calc_ABC(uint8_t i, double target[], double flag[])
+double _calc_ABC(uint8_t i, double target[], double flag[])
 {
 	double tmp = 0;
 	

@@ -61,6 +61,7 @@
 		tg_prompt();
 		return;
 	}
+*/
 
 #ifndef xio_file_h
 #define xio_file_h
@@ -129,5 +130,4 @@ int xio_rewind_eep();
 
 // SD Card functions
 
-#endif
 #endif
