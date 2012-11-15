@@ -17,6 +17,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -105,8 +106,8 @@
 #include "system.h"
 #include "xio/xio.h"
 #include "xmega/xmega_eeprom.h"
-
-typedef const char PROGMEM *prog_char_ptr;	// access to PROGMEM arrays of PROGMEM strings
+typedef char PROGMEM *prog_char_ptr;	// access to PROGMEM arrays of PROGMEM strings
+typedef char PROGMEM *prog_char_ptr;	// access to PROGMEM arrays of PROGMEM strings
 
 //*** STATIC STUFF ***********************************************************
 
@@ -144,8 +145,8 @@ static uint8_t _cmd_index_is_single(uint8_t index);
 static uint8_t _cmd_index_is_group(uint8_t index);
 static uint8_t _cmd_index_is_uber_group(uint8_t index);
 
-// helpers
 static char * _get_format(const INDEX_T i, char *format);
+static char *_get_format(const INDEX_T i, char *format);
 //static int8_t _get_axis(const INDEX_T i);
 static int8_t _get_position_axis(const INDEX_T i);
 static int8_t _get_motor(const INDEX_T i);
@@ -167,13 +168,14 @@ static void _print_sr(cmdObj *cmd);		// run status report (as printout)
 static uint8_t _set_sr(cmdObj *cmd);	// set status report specification
 static uint8_t _set_si(cmdObj *cmd);	// set status report interval
 static uint8_t _get_qr(cmdObj *cmd);	// run queue report (as data)
-static uint8_t _get_pba(cmdObj *cmd);	// get planner buffers available
+static uint8_t _get_pb(cmdObj *cmd);	// get planner buffers available
 
 static uint8_t _get_gc(cmdObj *cmd);	// get current gcode block
 static uint8_t _run_gc(cmdObj *cmd);	// run a gcode block
 
 static uint8_t _get_line(cmdObj *cmd);	// get runtime line number
-static uint8_t _get_lix(cmdObj *cmd);	// get runtime line index
+static uint8_t _get_lx(cmdObj *cmd);	// get runtime line index
+static uint8_t _set_lx(cmdObj *cmd);	// set runtime line index
 static uint8_t _get_stat(cmdObj *cmd);	// get combined machine state as value and string
 static uint8_t _get_macs(cmdObj *cmd);	// get raw machine state as value and string
 static uint8_t _get_cycs(cmdObj *cmd);	// get raw cycle state as value and string
@@ -235,16 +237,24 @@ static const char msg_g20[] PROGMEM = "G20 - inches mode";
 static const char msg_g21[] PROGMEM = "G21 - millimeter mode";
 static PGM_P const msg_unit[] PROGMEM = { msg_g20, msg_g21 };
 
-static const char msg_stat0[] PROGMEM = "Initializing";	// both stat and macs use this array
+static const char msg_stat0[] PROGMEM = "Initializing";	// stat uses this array
 static const char msg_stat1[] PROGMEM = "Reset";
-static const char msg_stat2[] PROGMEM = "Cycle";
-static const char msg_stat3[] PROGMEM = "Stop";
-static const char msg_stat4[] PROGMEM = "End";
-static const char msg_stat5[] PROGMEM = "Run";			// stat extensions for combined states
-static const char msg_stat6[] PROGMEM = "Hold";			// ""
-static const char msg_stat7[] PROGMEM = "Homing";		// "" 
-static const char msg_stat8[] PROGMEM = "Jog";			// "" 
-static PGM_P const msg_stat[] PROGMEM = { msg_stat0, msg_stat1, msg_stat2, msg_stat3 , msg_stat4 , msg_stat5 , msg_stat6 , msg_stat7, msg_stat8 };
+static const char msg_stat2[] PROGMEM = "Stop";
+static const char msg_stat3[] PROGMEM = "End";
+static const char msg_stat4[] PROGMEM = "Run";
+static const char msg_stat5[] PROGMEM = "Hold";
+static const char msg_stat6[] PROGMEM = "Probe";
+static const char msg_stat7[] PROGMEM = "Cycle";
+static const char msg_stat8[] PROGMEM = "Homing";
+static const char msg_stat9[] PROGMEM = "Jog";
+static PGM_P const msg_stat[] PROGMEM = { msg_stat0, msg_stat1, msg_stat2, msg_stat3, msg_stat4, msg_stat5, msg_stat6, msg_stat7, msg_stat8, msg_stat9};
+
+static const char msg_macs0[] PROGMEM = "Initializing";
+static const char msg_macs1[] PROGMEM = "Reset";
+static const char msg_macs2[] PROGMEM = "Cycle";
+static const char msg_macs3[] PROGMEM = "Stop";
+static const char msg_macs4[] PROGMEM = "End";
+static PGM_P const msg_macs[] PROGMEM = { msg_macs0, msg_macs1, msg_macs2, msg_macs3 , msg_macs4};
 
 static const char msg_cycs0[] PROGMEM = "Off";
 static const char msg_cycs1[] PROGMEM = "Started";
@@ -329,7 +339,13 @@ static PGM_P const msg_am[] PROGMEM = {
  *		  retrieval you must list it in the GROUP_EXCLUDE string in config.h.
  *		  Currently only cycs(tate) and coor(inate system) are excluded. 
  */
-
+static const char str_fv[] PROGMEM = "fv,firmware_v,[fv]  firmware_version%16.2f\n";
+static const char str_fb[] PROGMEM = "fb,firmware_b,[fb]  firmware_build%18.2f\n";
+static const char str_id[] PROGMEM = "id,id,[id]  id_device%16d\n";
+static const char str_si[] PROGMEM = "si,status_i,[si]  status_interval    %10.0f ms [0=off]\n";
+static const char str_sr[] PROGMEM = "sr,status_r,";	// status_report {"sr":""}  and ? command
+static const char str_qr[] PROGMEM = "qr,queue_r,";		// queue_report {"qr":""}
+static const char str_pb[] PROGMEM = "pb,planner_buffer_a,Planner buffers:%8d\n";
 static const char str_fv[] PROGMEM = "fv,firmware_v,[fv]  firmware_version%16.2f\n";
 static const char str_fb[] PROGMEM = "fb,firmware_b,[fb]  firmware_build%18.2f\n";
 static const char str_id[] PROGMEM = "id,id,[id]  id_device%16d\n";
@@ -339,10 +355,11 @@ static const char str_qr[] PROGMEM = "qr,queue_r,";		// queue_report {"qr":""}
 static const char str_pba[] PROGMEM = "pba,planner_buffer_a,Planner buffers:%8d\n";
 static const char str_pbc[] PROGMEM = "pbc,planner_buffer_c,";
 
+
 // Gcode model values for reporting purposes
 static const char str_vel[]  PROGMEM = "vel,velocity,Velocity:%17.3f%S/min\n";
 static const char str_line[] PROGMEM = "line,line_n,Line number:%10.0f\n";
-static const char str_lix[]  PROGMEM = "lix,line_i,Line index:%13d\n";
+static const char str_lx[]   PROGMEM = "lx,line_i,Line index:%13d\n";
 static const char str_feed[] PROGMEM = "feed,feed,Feed rate:%16.3f%S/min\n";
 static const char str_stat[] PROGMEM = "stat,stat,Machine state:       %s\n"; // combined machine state
 static const char str_macs[] PROGMEM = "macs,macs,Raw machine state:   %s\n"; // raw machine state
@@ -399,6 +416,7 @@ static const char str_ic[] PROGMEM = "ic,ignore_c,[ic]  ignore CR or LF on RX %7
 static const char str_ec[] PROGMEM = "ec,enable_c,[ec]  enable_CR (on TX)%12d [0,1]\n";
 static const char str_ee[] PROGMEM = "ee,enable_e,[ee]  enable_echo      %12d [0,1]\n";
 static const char str_ex[] PROGMEM = "ex,enable_x,[ex]  enable_xon_xoff  %12d [0,1]\n";
+static const char str_eq[] PROGMEM = "eq,enable_q,[eq]  enable_queue_reports%9d [0,1]\n";
 static const char str_ej[] PROGMEM = "ej,enable_j,[ej]  enable_json_mode %12d [0,1]\n";
 
 // Motor strings in program memory 
@@ -505,7 +523,6 @@ static const char str_csv[] PROGMEM = "csv,c_s,[csv] c_search_velocity%16.3f%S/m
 static const char str_clv[] PROGMEM = "clv,c_latch_v,[clv] c_latch_velocity%17.3f%S/min\n";
 static const char str_clb[] PROGMEM = "clb,c_latch_b,[clb] c_latch_backoff%18.3f%S\n";
 static const char str_czb[] PROGMEM = "czb,c_z,[czb] c_zero_backoff%19.3f%S\n";
-
 static const char str_pwmf[] PROGMEM =        "pwmf,p_f,[pwmf] pwm_frequency   %15.3fHz\n";
 static const char str_p3sl[] PROGMEM =  "p3sl,p_cw_s_lo,[p3sl] pwm_cw_speed_lo %15.3fRPM\n";
 static const char str_p3sh[] PROGMEM =  "p3sh,p_cw_s_hi,[p3sh] pwm_cw_speed_hi %15.3fRPM\n";
@@ -516,6 +533,7 @@ static const char str_p4sh[] PROGMEM = "p4sh,p_ccw_s_hi,[p4sh] pwm_ccw_speed_hi%
 static const char str_p4pl[] PROGMEM = "p4pl,p_ccw_p_lo,[p4pl] pwm_ccw_phase_lo          %4.3f [0..1]\n";
 static const char str_p4ph[] PROGMEM = "p4ph,p_ccw_p_hi,[p4ph] pwm_ccw_phase_hi          %4.3f [0..1]\n";
 static const char str_p5of[] PROGMEM =      "p5of,p_off,[p5of] pwm_phase_off             %4.3f [0..1]\n";
+
 
 // Coordinate system offset groups
 static const char str_g54x[] PROGMEM = "g54x,g54_x,[g54x] g54_x_offset%20.3f%S\n";
@@ -582,7 +600,6 @@ static const char str_sr17[] PROGMEM = "sr17,sr17,";
 static const char str_sr18[] PROGMEM = "sr18,sr18,";
 static const char str_sr19[] PROGMEM = "sr19,sr19,";
 
-// Group strings
 static const char str_1[] PROGMEM = "1,1,";			// motor groups
 static const char str_2[] PROGMEM = "2,2,";
 static const char str_3[] PROGMEM = "3,3,";
@@ -604,6 +621,7 @@ static const char str_g92[] PROGMEM = "g92,g92,";	// origin offsets
 static const char str_sys[] PROGMEM = "sys,sys,";	// system group
 static const char str_s[] PROGMEM = "s,s,";			// system group alias
 static const char str_pos[] PROGMEM = "pos,pos,";	// work position group
+static const char str_mpo[] PROGMEM = "mpo,mpo,";	// machine position group
 static const char str_mpo[] PROGMEM = "mpo,mpo,";	// machine position group
 
 // groups of groups (for text-mode display only)
@@ -631,12 +649,11 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_si, _print_dbl, _get_int, _set_si,  (double *)&cfg.status_report_interval, STATUS_REPORT_INTERVAL_MS },
 	{ str_sr, _print_sr,  _get_sr,  _set_sr,  (double *)&tg.null, 0 },	// status report object
 	{ str_qr, _print_nul, _get_qr,  _set_nul, (double *)&tg.null, 0 },	// queue report object
-	{ str_pba,_print_int, _get_pba, _set_nul, (double *)&tg.null, 0 },	// planner buffers available
-//	{ str_pbc,_print_nul, _get_pba, _set_nul, (double *)&tg.null, 0 },	// planner buffer clear
+	{ str_pb, _print_int, _get_pb,  _set_nul, (double *)&tg.null, 0 },	// planner buffers available
 
 	// gcode model attributes for reporting puropses
 	{ str_line,_print_int, _get_line,_set_int, (double *)&gm.linenum, 0 }, // line number - gets runtime line number
-	{ str_lix, _print_int, _get_lix, _set_int, (double *)&gm.lineindex,0 },// line index - gets runtime line index
+	{ str_lx,  _print_int, _get_lx,  _set_lx,  (double *)&tg.null ,0 },	// line index - get/set runtime line index
 	{ str_feed,_print_lin, _get_dbu, _set_nul, (double *)&tg.null, 0 },	// feed rate
 	{ str_stat,_print_str, _get_stat,_set_nul, (double *)&tg.null, 0 },	// combined machine state
 	{ str_macs,_print_str, _get_macs,_set_nul, (double *)&tg.null, 0 },	// raw machine state
@@ -694,7 +711,8 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_ec, _print_ui8, _get_ui8, _set_ec,  (double *)&cfg.enable_cr,				COM_APPEND_TX_CR },
 	{ str_ee, _print_ui8, _get_ui8, _set_ee,  (double *)&cfg.enable_echo,			COM_ENABLE_ECHO },
 	{ str_ex, _print_ui8, _get_ui8, _set_ex,  (double *)&cfg.enable_xon,			COM_ENABLE_XON },
-	{ str_ej, _print_ui8, _get_ui8, _set_ui8, (double *)&cfg.communications_mode,	COM_COMMUNICATIONS_MODE },
+	{ str_eq, _print_ui8, _get_ui8, _set_ui8, (double *)&cfg.enable_qr,				COM_ENABLE_QR },
+	{ str_ej, _print_ui8, _get_ui8, _set_ui8, (double *)&cfg.comm_mode,				COM_COMMUNICATIONS_MODE },
 
 	{ str_1ma, _print_ui8, _get_ui8, _set_ui8,(double *)&cfg.m[MOTOR_1].motor_map,	M1_MOTOR_MAP },
 	{ str_1sa, _print_rot, _get_dbl ,_set_sa, (double *)&cfg.m[MOTOR_1].step_angle,	M1_STEP_ANGLE },
@@ -798,7 +816,6 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_clv, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].latch_velocity,	C_LATCH_VELOCITY },
 	{ str_clb, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].latch_backoff,	C_LATCH_BACKOFF },
 	{ str_czb, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.a[C].zero_backoff,		C_ZERO_BACKOFF },
-
     // PWM settings
     { str_pwmf, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.frequency,			C_PWM_FREQUENCY },
     { str_p3sl, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.cw_speed_lo,        C_CW_SPEED_LO },
@@ -810,6 +827,7 @@ struct cfgItem const cfgArray[] PROGMEM = {
     { str_p4pl, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_phase_lo,       C_CCW_PHASE_LO },
     { str_p4ph, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.ccw_phase_hi,       C_CCW_PHASE_HI },
     { str_p5of, _print_rot, _get_dbl, _set_dbl,(double *)&cfg.p.phase_off,          C_PWM_PHASE_OFF },
+
 
 	// coordinate system offsets
 	{ str_g54x, _print_lin, _get_dbu, _set_dbu,(double *)&cfg.offset[G54][X], G54_X_OFFSET },
@@ -876,7 +894,6 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_sr18, _print_nul, _get_int, _set_int,(double *)&cfg.status_report_spec[18],0 },
 	{ str_sr19, _print_nul, _get_int, _set_int,(double *)&cfg.status_report_spec[19],0 },
 	
-	// group lookups - must follow the single-valued entries for proper sub-string matching
 	{ str_sys, _print_nul, _get_sys, _set_grp,(double *)&tg.null,0 },	// system group 	   (must be 1st)
 	{ str_s, _print_nul, _get_sys, _set_grp,(double *)&tg.null,0 },		// alias for sys group (must be 2nd)
 	{ str_1, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },		// motor groups
@@ -899,6 +916,7 @@ struct cfgItem const cfgArray[] PROGMEM = {
 	{ str_g92, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// origin offsets
 	{ str_pos, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// work position group
 	{ str_mpo, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// machine position group
+	{ str_mpo, _print_nul, _get_grp, _set_grp,(double *)&tg.null,0 },	// machine position group
 
 	// uber-group (groups of groups, for text-mode displays only)
 	{ str_moto, _print_nul, _do_motors, _set_nul,(double *)&tg.null,0 },
@@ -914,8 +932,8 @@ struct cfgItem const cfgArray[] PROGMEM = {
 #define CMD_INDEX_MAX (sizeof cfgArray / sizeof(struct cfgItem))
 
 // hack alert. Find a better way to do this
-#define CMD_COUNT_STATUS 20		// number of status report persistence elements - see final array [index]
 #define CMD_COUNT_GROUPS 23		// count of simple groups
+#define CMD_COUNT_UBER_GROUPS 4 // count of uber-groups
 #define CMD_COUNT_UBER_GROUPS 4 // count of uber-groups
 
 #define CMD_INDEX_END_SINGLES (CMD_INDEX_MAX - CMD_COUNT_STATUS - CMD_COUNT_GROUPS - CMD_COUNT_UBER_GROUPS)
@@ -990,6 +1008,7 @@ static uint8_t _set_si(cmdObj *cmd)
 
 /**** QUEUE REPORT FUNCTIONS ****
  * _get_qr() - run queue report
+ * _get_pb() - get planner buffers available
  */
 static uint8_t _get_qr(cmdObj *cmd) 
 {
@@ -997,14 +1016,14 @@ static uint8_t _get_qr(cmdObj *cmd)
 	return (TG_OK);
 }
 
-static uint8_t _get_pba(cmdObj *cmd)
+static uint8_t _get_pb(cmdObj *cmd)
 {
 	cmd->value = (double)mp_get_planner_buffers_available();
 	cmd->type = TYPE_INTEGER;
 	return (TG_OK);
 }
 
-/**** REPORTING FUNCTIONS ****************************************
+/**** STATUS REPORT FUNCTIONS ****************************************
  * _get_msg_helper() - helper to get display message
  * _get_stat() - get combined machine state as value and string
  * _get_macs() - get raw machine state as value and string
@@ -1020,84 +1039,87 @@ static uint8_t _get_pba(cmdObj *cmd)
  * _get_frmo() - get gcode feed rate mode as string
  * _get_feed() - get feed rate 
  * _get_line() - get runtime line number for status reports
+ * _get_lx()   - get runtime line index for queue reports
+ * _set_lx()   - set runtime line index for queue reports
  * _get_vel()  - get runtime velocity
  * _get_pos()  - get runtime work position
  * _get_mpos() - get runtime machine position
- * _print_pos()  - print work or machine position
- */
-static uint8_t _get_msg_helper(cmdObj *cmd, const char* msg, uint8_t value)
+ * _print_pos()- print work or machine position
+static uint8_t _get_msg_helper(cmdObj *cmd, prog_char_ptr msg, uint8_t value)
+static uint8_t _get_msg_helper(cmdObj *cmd, prog_char_ptr msg, uint8_t value)
 {
 	cmd->value = (double)value;
 	cmd->type = TYPE_INTEGER;
-	strncpy_P(cmd->string, (const char*)pgm_read_word(&msg[value*2]), CMD_STRING_LEN); // hack alert: direct computation of index
+	strncpy_P(cmd->string, (PGM_P)pgm_read_word(&msg[value*2]), CMD_STRING_LEN); // hack alert: direct computation of index
 	return (TG_OK);
 //	return((char *)pgm_read_word(&msg[(uint8_t)value]));
 }
 
 static uint8_t _get_stat(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_stat, cm_get_combined_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_stat, cm_get_combined_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_stat, cm_get_combined_state()));
 
-// how to do this w/o calling the helper routine - See 331.09 for original routines
-//	cmd->value = cm_get_machine_state();
-//	cmd->type = TYPE_INTEGER;
-//	strncpy_P(cmd->string_value,(const char*)pgm_read_word(&msg_stat[(uint8_t)cmd->value]),CMD_STRING_LEN);
-//	return (TG_OK);
+/* how to do this w/o calling the helper routine - See 331.09 for original routines
+	cmd->value = cm_get_machine_state();
+	cmd->type = TYPE_INTEGER;
+	strncpy_P(cmd->string_value,(PGM_P)pgm_read_word(&msg_stat[(uint8_t)cmd->value]),CMD_STRING_LEN);
+	return (TG_OK);
+ */
 }
 
 static uint8_t _get_macs(cmdObj *cmd)
 {
-	return(_get_msg_helper(cmd, (const char*)msg_stat, cm_get_machine_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_macs, cm_get_machine_state()));
 }
 
 static uint8_t _get_cycs(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_cycs, cm_get_cycle_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_cycs, cm_get_cycle_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_cycs, cm_get_cycle_state()));
 }
 
 static uint8_t _get_mots(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_mots, cm_get_motion_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_mots, cm_get_motion_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_mots, cm_get_motion_state()));
 }
 
 static uint8_t _get_hold(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_hold, cm_get_hold_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_hold, cm_get_hold_state()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_hold, cm_get_hold_state()));
 }
 
 static uint8_t _get_unit(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_unit, cm_get_units_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_unit, cm_get_units_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_unit, cm_get_units_mode()));
 }
 
 static uint8_t _get_coor(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_coor, cm_get_coord_system()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_coor, cm_get_coord_system()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_coor, cm_get_coord_system()));
 }
 
 static uint8_t _get_momo(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_momo, cm_get_motion_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_momo, cm_get_motion_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_momo, cm_get_motion_mode()));
 }
 
 static uint8_t _get_plan(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_plan, cm_get_select_plane()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_plan, cm_get_select_plane()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_plan, cm_get_select_plane()));
 }
 
 static uint8_t _get_path(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_path, cm_get_path_control()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_path, cm_get_path_control()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_path, cm_get_path_control()));
 }
 
 static uint8_t _get_dist(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_dist, cm_get_distance_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_dist, cm_get_distance_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_dist, cm_get_distance_mode()));
 }
 
 static uint8_t _get_frmo(cmdObj *cmd)
-{
-	return(_get_msg_helper(cmd, (const char*)msg_frmo, cm_get_inverse_feed_rate_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_frmo, cm_get_inverse_feed_rate_mode()));
+	return(_get_msg_helper(cmd, (prog_char_ptr)msg_frmo, cm_get_inverse_feed_rate_mode()));
 }
 
 static uint8_t _get_line(cmdObj *cmd)
@@ -1107,9 +1129,16 @@ static uint8_t _get_line(cmdObj *cmd)
 	return (TG_OK);
 }
 
-static uint8_t _get_lix(cmdObj *cmd)
+static uint8_t _get_lx(cmdObj *cmd)
 {
 	cmd->value = (double)mp_get_runtime_lineindex();
+	cmd->type = TYPE_INTEGER;
+	return (TG_OK);
+}
+
+static uint8_t _set_lx(cmdObj *cmd)
+{
+	mp_set_planner_lineindex((uint32_t)cmd->value);
 	cmd->type = TYPE_INTEGER;
 	return (TG_OK);
 }
@@ -1144,8 +1173,8 @@ static void _print_pos(cmdObj *cmd)
 	char format[CMD_FORMAT_LEN+1];
 	if (axis < A) { 
 		units = cm_get_units_mode();
-	}
-	fprintf(stderr, _get_format(cmd->index,format), cmd->value, (const char*)pgm_read_word(&msg_units[units]));
+	fprintf(stderr, _get_format(cmd->index,format), cmd->value, (PGM_P)pgm_read_word(&msg_units[units]));
+	fprintf(stderr, _get_format(cmd->index,format), cmd->value, (PGM_P)pgm_read_word(&msg_units[units]));
 }
 
 /**** GCODE FUNCTIONS ****************************************/
@@ -1192,17 +1221,19 @@ static uint8_t _set_am(cmdObj *cmd)
 	if (strchr(linear_axes, cmd->token[0]) != NULL) {		// true if it's a linear axis
 		if (cmd->value > AXIS_MAX_LINEAR) {
 			cmd->value = 0;
-
-			cmd_add_string("msg","*** WARNING *** Unsupported linear axis mode. Axis DISABLED");
-		//  Bby way of example, the following method saves RAM at the expense of FLASH size:
-		//	char message[CMD_STRING_LEN];
-		//	sprintf_P(message, PSTR("*** WARNING *** Unsupported linear axis mode. Axis DISABLED\n"));
-		//	cmd_add_string("msg",message);
+			char message[CMD_STRING_LEN]; 
+			sprintf_P(message, PSTR("*** WARNING *** Unsupported linear axis mode. Axis DISABLED"));
+			cmd_add_string("msg",message);
+		//  The following method saves FLASH at the expense of RAM size:
+		//	cmd_add_string("msg","*** WARNING *** Unsupported linear axis mode. Axis DISABLED");
 		}
 	} else {
 		if (cmd->value > AXIS_MAX_ROTARY) {
 			cmd->value = 0;
-			cmd_add_string("msg","*** WARNING *** Unsupported rotary axis mode. Axis DISABLED");
+			char message[CMD_STRING_LEN]; 
+			sprintf_P(message, PSTR("*** WARNING *** Unsupported rotary axis mode. Axis DISABLED"));
+			cmd_add_string("msg",message);
+		//	cmd_add_string("msg","*** WARNING *** Unsupported rotary axis mode. Axis DISABLED");
 		}
 	}
 	_set_ui8(cmd);
@@ -1212,15 +1243,18 @@ static uint8_t _set_am(cmdObj *cmd)
 static void _print_am(cmdObj *cmd)
 {
 	cmd_get(cmd);
-	char format[CMD_FORMAT_LEN+1];
-	fprintf(stderr, _get_format(cmd->index, format), (uint8_t)cmd->value, (const char*)pgm_read_word(&msg_am[(uint8_t)cmd->value]));
+	fprintf(stderr, _get_format(cmd->index, format), (uint8_t)cmd->value, (PGM_P)pgm_read_word(&msg_am[(uint8_t)cmd->value]));
+	fprintf(stderr, _get_format(cmd->index, format), (uint8_t)cmd->value, (PGM_P)pgm_read_word(&msg_am[(uint8_t)cmd->value]));
 }
 
 static uint8_t _set_sm(cmdObj *cmd)
-{ 
+{
 	if (cmd->value > SW_MODE_ENABLED_NC) {
 		cmd->value = 0;
-		cmd_add_string("msg","*** WARNING *** Unsupported switch mode. Switch DISABLED");
+		char message[CMD_STRING_LEN]; 
+		sprintf_P(message, PSTR("*** WARNING *** Unsupported switch mode. Switch DISABLED"));
+		cmd_add_string("msg",message);
+	//	cmd_add_string("msg","*** WARNING *** Unsupported switch mode. Switch DISABLED");
 	}
 	_set_ui8(cmd);
 	gpio_init();
@@ -1244,7 +1278,10 @@ static uint8_t _set_tr(cmdObj *cmd)
 static uint8_t _set_mi(cmdObj *cmd)
 {
 	if (fp_NE(cmd->value,1) && fp_NE(cmd->value,2) && fp_NE(cmd->value,4) && fp_NE(cmd->value,8)) {
-		cmd_add_string("msg","*** WARNING *** Unsupported microstep value");
+		char message[CMD_STRING_LEN]; 
+		sprintf_P(message, PSTR("*** WARNING *** Non-standard microstep value"));
+		cmd_add_string("msg",message);
+	//	cmd_add_string("msg","*** WARNING *** Non-standard microstep value");
 	}
 	_set_ui8(cmd);						// but set it anyway, even if it's unsupported
 	_set_motor_steps_per_unit(cmd);
@@ -1266,7 +1303,7 @@ static uint8_t _set_motor_steps_per_unit(cmdObj *cmd)
 	return (TG_OK);
 }
 
-/**** SERIAL IO FUNCTIONS ****
+/**** SERIAL IO SETTINGS ****
  * _set_ic() - ignore CR or LF on RX
  * _set_ec() - enable CRLF on TX
  * _set_ee() - enable character echo
@@ -1317,15 +1354,21 @@ static uint8_t _set_ex(cmdObj *cmd)
 	return(_set_comm_helper(cmd, XIO_XOFF, XIO_NOXOFF));
 }
 
+
+
 /*****************************************************************************
+ *****************************************************************************
+ *****************************************************************************
  *** END SETTING-SPECIFIC REGION *********************************************
  *** Code below should not require changes as parameters are added/updated ***
+ *****************************************************************************
+ *****************************************************************************
  *****************************************************************************/
 
 /****************************************************************************
  * cfg_init() - called once on system init
  *
- *	Will perform one of 2 actions:
+ * Will perform one of 2 actions:
  *	(1) if NVM is set up and at current config version: use NVM data for config
  *	(2) if NVM is set up or out-of-rev: load RAM and NVM with hardwired default settings
  */
@@ -1335,11 +1378,11 @@ void cfg_init()
 	cmdObj cmd;
 	cm_set_units_mode(MILLIMETERS);	// must do init in MM mode
 	cmd_clear_list();				// setup the cmd object lists. Do this first.
-	cfg.communications_mode = TG_JSON_MODE; // initial value until EEPROM is read
+	cfg.comm_mode = TG_JSON_MODE;	// initial value until EEPROM is read
 
 #ifdef __DISABLE_EEPROM_INIT		// cutout for debug simulation
-	// Apply the hard-coded default values from settings.h and exit
 
+	// Apply the hard-coded default values from settings.h and exit
 	for (cmd.index=0; _cmd_index_is_single(cmd.index); cmd.index++) {
 		if (strstr(DONT_INITIALIZE, cmd_get_token(cmd.index, cmd.token)) != NULL) continue;
 		cmd.value = (double)pgm_read_float(&cfgArray[cmd.index].def_value);
@@ -1353,7 +1396,7 @@ void cfg_init()
 	cmd_read_NVM_value(&cmd);
 
 	if (fp_EQ(cmd.value,tg.build)) { // Case (1) NVM is set up and current revision. Load config from NVM
-		tg_print_message_number(1);
+		tg_print_loading_configs_message();
 		for (cmd.index=0; _cmd_index_is_single(cmd.index); cmd.index++) {
 			cmd_read_NVM_value(&cmd);
 			if (strstr(DONT_INITIALIZE, cmd_get_token(cmd.index, cmd.token)) != NULL) continue;
@@ -1379,21 +1422,21 @@ static uint8_t _set_defa(cmdObj *cmd)
 		return (TG_OK);
 	}
 	cm_set_units_mode(MILLIMETERS);	// must do init in MM mode
-	tg_print_configuration_profile();
+	tg_print_initializing_message();
 
 	for (cmd->index=0; _cmd_index_is_single(cmd->index); cmd->index++) {
 		if (strstr(DONT_INITIALIZE, cmd_get_token(cmd->index, cmd->token)) != NULL) continue;
 		cmd->value = (double)pgm_read_float(&cfgArray[cmd->index].def_value);
 		cmd_set(cmd);
 		cmd_persist(cmd);
-		if (cfg.communications_mode != TG_JSON_MODE) { fprintf_P(stderr,PSTR("."));}
+		if (cfg.comm_mode != TG_JSON_MODE) { fprintf_P(stderr,PSTR("."));}
 	}
-	if (cfg.communications_mode != TG_JSON_MODE) { fprintf_P(stderr,PSTR("\n")); }
+	if (cfg.comm_mode != TG_JSON_MODE) { fprintf_P(stderr,PSTR("\n")); }
 	return (TG_OK);
 }
 
 /****************************************************************************
- * cfg_config_parser() - update a config setting from a text block
+ * cfg_text_parser() - update a config setting from a text block (text mode)
  * 
  * Use cases (execution paths handled)
  *	- $xfr=1200	single parameter set is requested
@@ -1401,7 +1444,7 @@ static uint8_t _set_defa(cmdObj *cmd)
  *	- $x		group display is requested
  */
 
-uint8_t cfg_config_parser(char *str)
+uint8_t cfg_text_parser(char *str)
 {
 	cmdObj *cmd = cmd_body;					// point at first object in the body
 
@@ -1425,7 +1468,7 @@ uint8_t cfg_config_parser(char *str)
 }
 
 /****************************************************************************
- * _parse_config_string() - parse a command line
+ * _parse_config_string() - parse a text-mode command line
  */
 static uint8_t _parse_config_string(char *str, cmdObj *cmd)
 {
@@ -1553,9 +1596,10 @@ cmdObj *cmd_clear(cmdObj *cmd)		// clear the cmdObj structure
 	cmd->nx = nx;					// restore pointers
 	cmd->pv = pv;
 	if (cmd->pv != NULL) { 			// set depth correctly
-		cmd->depth = cmd->pv->depth;
 		if (cmd->pv->type == TYPE_PARENT) { 
-			cmd->depth++; 
+			cmd->depth = cmd->pv->depth + 1;
+		} else {
+			cmd->depth = cmd->pv->depth;
 		}
 	}
 	cmd->type = TYPE_END;
@@ -1583,29 +1627,51 @@ INDEX_T cmd_get_index_by_token(const char *str)
 
 INDEX_T cmd_get_index(const char *str)
 {
+	uint8_t len;
+	char cmp[CMD_TOKEN_LEN];
+
+	// append a comma so PROGMEM match is exact, and handle string-too-long case
+	snprintf(cmp, CMD_TOKEN_LEN, "%s,", str);
+	if ((len = strlen(cmp)) == CMD_TOKEN_LEN) { 
+		cmp[CMD_TOKEN_LEN-1] = ',';
+	}
+
+	// scan the cfgArray strings for an exact match
+	for (INDEX_T i=0; i<CMD_INDEX_MAX; i++) {
+		if ((strncmp_P(cmp, (PGM_P)pgm_read_word(&cfgArray[i]), len)) == 0) {
+			return (i);						// matched
+		}
+	}
+	return (-1);							// no match
+}
+
+/* OLD CODE FOR ABOVE - w/ FRIENDLY_NAME
+INDEX_T cmd_get_index(const char *str)
+{
 	char *end;
 	char *friendly_name;
 	char token[CMD_NAMES_FIELD_LEN];
 
-	for (INDEX_T i=0; i<CMD_INDEX_MAX; i++) {
-		strncpy_P(token,(const char*)pgm_read_word(&cfgArray[i]), CMD_NAMES_FIELD_LEN);
+		strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i]), CMD_NAMES_FIELD_LEN);
+		strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i]), CMD_NAMES_FIELD_LEN);
 		friendly_name = strstr(token,",");	// find the separating comma
 		*(friendly_name++) = NUL;			// split token & name strings, terminate token string
 		end = strstr(friendly_name,",");	// find the terminating comma
 		*end = NUL;							// terminate the name string
-		if (strstr(str, token) == str) return(i);
-		if (strstr(str, friendly_name) == str) return(i);
+		if (strcmp(str, token) == 0) { return(i);}
+		if (strcmp(str, friendly_name) == 0) { return(i);}
 	}
 	return (-1);							// no match
 }
+*/
 
 char *cmd_get_token(const INDEX_T i, char *token)
 {
 	if ((i < 0) || (i >= CMD_INDEX_MAX)) { 
 		*token = NUL;
 		return (token);
-	}
-	strncpy_P(token,(const char*)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
+	strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
+	strncpy_P(token,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
 	char *ptr = strstr(token,",");			// find the first separating comma
 	*ptr = NUL;								// terminate the string after the token
 	return (token);
@@ -1617,8 +1683,8 @@ char cmd_get_group(const INDEX_T i)
 	char chr;
 	char groups[] = {"xyzabc1234"};
 
-	if ((i < 0) || (i >= CMD_INDEX_MAX)) return (NUL);
-	strncpy_P(&chr,(const char*)pgm_read_word(&cfgArray[i].string), 1);
+	strncpy_P(&chr,(PGM_P)pgm_read_word(&cfgArray[i].string), 1);
+	strncpy_P(&chr,(PGM_P)pgm_read_word(&cfgArray[i].string), 1);
 	if ((ptr = strchr(groups, chr)) == NULL) {
 		return ('s');
 	}
@@ -1657,79 +1723,35 @@ void cmd_clear_list()
 {
 	cmdObj *cmd;
 
-	// setup header objects (2)
-	cmd = cmd_header;
-	cmd_clear(cmd);								// "r" parent
-	sprintf_P(cmd->token, PSTR("r"));
+	cmd = cmd_clear(cmd_header);				// setup "b" body header
+	sprintf_P(cmd->token, PSTR("b"));
 	cmd->type = TYPE_PARENT;
-	cmd->pv = 0;
-	cmd->nx = (cmd+1);
-	cmd->depth = 0;
+	cmd->nx = (cmd_body);
 
-	cmd_clear(++cmd);							// "bd" parent (body)
-	sprintf_P(cmd->token, PSTR("bd"));
-	cmd->type = TYPE_PARENT;
-	cmd->pv = (cmd-1);
-	cmd->nx = cmd_body;
-	cmd->depth = 1;
+	cmd_clear_body(cmd_body);					// setup body objects
 
-	// setup body objects
-	cmd_clear_body();
-
-	// setup footer objects
-	cmd = cmd_status;
-	cmd_clear(cmd);								// "sc" element
-	sprintf_P(cmd->token, PSTR("sc"));
-	cmd->type = TYPE_INTEGER;
+	cmd = cmd_clear(cmd_footer);				// setup "f" footer element
+	sprintf_P(cmd->token, PSTR("f"));
+	cmd->type = TYPE_ARRAY;
 	cmd->pv = &cmd_body[CMD_BODY_LEN-1];
 	cmd->nx = (cmd+1);
-	cmd->depth = 1;
 
-//	cmd_clear(++cmd);							// "sm" element
-//	sprintf_P(cmd->token, PSTR("sm"));
-//	cmd->type = TYPE_STRING;
-//	cmd->pv = (cmd-1);
-//	cmd->nx = (cmd+1);
-//	cmd->depth = 1;
-
-//	cmd_clear(++cmd);							// "buf" element
-//	sprintf_P(cmd->token, PSTR("buf"));
-//	cmd->type = TYPE_INTEGER;
-//	cmd->pv = (cmd-1);
-//	cmd->nx = (cmd+1);
-//	cmd->depth = 1;
-
-//	cmd_clear(++cmd);							// "ln" element
-//	sprintf_P(cmd->token, PSTR("ln"));
-//	cmd->type = TYPE_INTEGER;
-//	cmd->pv = (cmd-1);
-//	cmd->nx = (cmd+1);
-//	cmd->depth = 1;
-
-	cmd_clear(++cmd);							// "cks" element
-	sprintf_P(cmd->token, PSTR("cks"));
-	cmd->type = TYPE_STRING;
+	cmd = cmd_clear(cmd+1);						// setup terminating element
 	cmd->pv = (cmd-1);
-	cmd->nx = (cmd+1);
-	cmd->depth = 1;
-
-	cmd_clear(++cmd);							// null last element (unused)
-	cmd->pv = (cmd-1);
-//	cmd->nx = NULL;	  // already = zeroed by cmd_clear. signals the last one. 
 }
 
-void cmd_clear_body()
+void cmd_clear_body(cmdObj *cmd)
 {
-	cmdObj *cmd = cmd_body;
+	cmdObj *cmd_first = cmd;
 	for (uint8_t i=0; i<CMD_BODY_LEN; i++) {
 		cmd_clear(cmd);
 		cmd->pv = (cmd-1);
 		cmd->nx = (cmd+1);
-		cmd->depth = 2;
+		cmd->depth = cmd->pv->depth +1;
 		cmd++;
 	}
-	(--cmd)->nx = cmd_status;					// correct last element
-	cmd = cmd_body;								// correct first element
+	(--cmd)->nx = cmd_footer;					// correct last element
+	cmd = cmd_first;							// correct first element
 	cmd->pv = &cmd_header[CMD_HEADER_LEN-1];
 }
 
@@ -1817,37 +1839,29 @@ uint8_t cmd_add_float(char *token, double value)
  * 	Use this function for all text and JSON output (dont just printf stuff)
  * 	It generates and prints the JSON and text mode output strings 
  *	It also cleans up the lists and gets ready for the next use
- *	In JSON mode it generates the status code, status message and checksum
+ *	In JSON mode it generates the footer with the status code, buffer count and checksum
  *	In text mode it uses the the textmode variable to set the output format
  */
 void cmd_print_list(uint8_t status, uint8_t textmode)
 {
-	/* JSON handling 
-	 * First populate the status code and message. Then make the string w/o the checksum
-	 * Slice the string at the last colon (following "cks") and generate the checksum. 
-	 * Then print the whole thing
-	 */
-	if (cfg.communications_mode == TG_JSON_MODE) {
-		cmdObj *cmd = cmd_status;
-		cmd->value = status;								// set status code
-//		tg_get_status_message(status, (cmd = cmd->nx)->string); // set status message
-//		(cmd = cmd->nx)->value = xio_get_usb_rx_free();		// set buffer available size
-//		(cmd = cmd->nx)->value = cm_get_model_linenum();	// set model line number
+	// JSON handling. Kind of a hack. Generate the JSON string with a dummy value for 
+	// the checksum hash. Then calculate the checksum and insert it into the JSON string
+	if (cfg.comm_mode == TG_JSON_MODE) {
+		cmdObj *cmd = cmd_footer;
+		sprintf(cmd->string, "%d,%d,%d,%04d",TINYG_COMM_PROTOCOL_REV, status, xio_get_usb_rx_free(), HASHMASK);
 		uint16_t strcount = js_serialize_json(tg.out_buf);	// make JSON string w/o checksum
-		while (tg.out_buf[strcount] != ':') { strcount--; }	// slice at last colon
-		tg.out_buf[strcount] = NUL;
-		cmd = cmd_checksum;									// write checksum
-		sprintf(cmd->string, "%lu", calculate_hash(tg.out_buf));
-		js_serialize_json(tg.out_buf); 						// make JSON string w/checksum
+		while (tg.out_buf[strcount] != ',') { strcount--; }	// slice at last comma
+		sprintf(tg.out_buf + strcount + 1, "%d]}\n", compute_checksum(tg.out_buf, strcount));
+		tg.out_buf[strcount + HASHLENGTH+1] = ']';	// stomp the nul termination, recover the brace
 		fprintf(stderr, "%s", tg.out_buf);
-	} else {
+		} else {
 			switch (textmode) {
 			case TEXT_INLINE_PAIRS: { _print_text_inline_pairs(); break; }
 			case TEXT_INLINE_VALUES: { _print_text_inline_values(); break; }
 			case TEXT_MULTILINE_FORMATTED: { _print_text_multiline_formatted(); break; }
 		}
 	}
-	cmd_clear_body();			// clear the cmd body to get ready for the next use
+	cmd_clear_body(cmd_body);		// clear the cmd body to get ready for the next use
 }
 
 void _print_text_inline_pairs()
@@ -1926,18 +1940,21 @@ static uint8_t _set_nul(cmdObj *cmd) { return (TG_OK);}
 static uint8_t _set_ui8(cmdObj *cmd)
 {
 	*((uint8_t *)pgm_read_word(&cfgArray[cmd->index].target)) = cmd->value;
+	cmd->type = TYPE_INTEGER;
 	return(TG_OK);
 }
 
 static uint8_t _set_int(cmdObj *cmd)
 {
 	*((uint32_t *)pgm_read_word(&cfgArray[cmd->index].target)) = cmd->value;
+	cmd->type = TYPE_INTEGER;
 	return(TG_OK);
 }
 
 static uint8_t _set_dbl(cmdObj *cmd)
 {
 	*((double *)pgm_read_word(&cfgArray[cmd->index].target)) = cmd->value;
+	cmd->type = TYPE_FLOAT;
 	return(TG_OK);
 }
 
@@ -1948,6 +1965,7 @@ static uint8_t _set_dbu(cmdObj *cmd)
 	} else {
 		*((double *)pgm_read_word(&cfgArray[cmd->index].target)) = cmd->value;
 	}
+	cmd->type = TYPE_FLOAT;
 	return(TG_OK);
 }
 
@@ -2020,15 +2038,15 @@ static void _print_dbl(cmdObj *cmd)
 static void _print_lin(cmdObj *cmd)
 {
 	cmd_get(cmd);
-	char format[CMD_FORMAT_LEN+1];
-	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (const char*)pgm_read_word(&msg_units[cm_get_units_mode()]));
+	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[cm_get_units_mode()]));
+	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[cm_get_units_mode()]));
 }
 
 static void _print_rot(cmdObj *cmd)
 {
 	cmd_get(cmd);
-	char format[CMD_FORMAT_LEN+1];
-	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (const char*)pgm_read_word(&msg_units[2]));
+	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[2]));
+	fprintf(stderr, _get_format(cmd->index, format), cmd->value, (PGM_P)pgm_read_word(&msg_units[2]));
 }
 
 /***************************************************************************** 
@@ -2043,8 +2061,8 @@ static char *_get_format(const INDEX_T i, char *format)
 {
 	char *ptr;
 	char tmp[CMD_STRING_FIELD_LEN];
-
-	strncpy_P(tmp,(const char*)pgm_read_word(&cfgArray[i].string), CMD_STRING_FIELD_LEN);
+	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_STRING_FIELD_LEN);
+	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_STRING_FIELD_LEN);
 	ptr = strstr(tmp,",");					// find the first separating comma
 	ptr = strstr(++ptr,",");				// find the second comma
 	ptr++;
@@ -2058,8 +2076,8 @@ static int8_t _get_position_axis(const INDEX_T i)
 	char *ptr;
 	char tmp[CMD_TOKEN_LEN];
 	char axes[] = {"xyzabc"};
-
-	strncpy_P(tmp,(const char*)pgm_read_word(&cfgArray[i].string),CMD_TOKEN_LEN);
+	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),CMD_TOKEN_LEN);
+	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),CMD_TOKEN_LEN);
 	if ((ptr = strchr(axes, tmp[3])) == NULL) { return (-1);}
 	return (ptr - axes);
 }
@@ -2069,8 +2087,8 @@ static int8_t _get_axis(const INDEX_T i)
 	char tmp;
 	char *ptr;
 	char axes[] = {"xyzabc"};
-
-	strncpy_P(&tmp,(const char*)pgm_read_word(&cfgArray[i].string),1);
+	strncpy_P(&tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),1);
+	strncpy_P(&tmp,(PGM_P)pgm_read_word(&cfgArray[i].string),1);
 	if ((ptr = strchr(axes, tmp)) == NULL) {
 		return (-1);
 	}
@@ -2082,8 +2100,8 @@ static int8_t _get_motor(const INDEX_T i)
 	char *ptr;
 	char motors[] = {"1234"};
 	char tmp[CMD_TOKEN_LEN+1];
-
-	strncpy_P(tmp,(const char*)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
+	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
+	strncpy_P(tmp,(PGM_P)pgm_read_word(&cfgArray[i].string), CMD_TOKEN_LEN+1);
 	if ((ptr = strchr(motors, tmp[0])) == NULL) {
 		return (-1);
 	}
@@ -2244,7 +2262,7 @@ uint8_t cmd_read_NVM_value(cmdObj *cmd)
 	uint16_t nvm_address = cfg.nvm_profile_base + (cmd->index * NVM_VALUE_LEN);
 	(void)EEPROM_ReadBytes(nvm_address, nvm_byte_array, NVM_VALUE_LEN);
 	memcpy(&cmd->value, &nvm_byte_array, NVM_VALUE_LEN);
-	cmd->type = TYPE_FLOAT;
+//	cmd->type = TYPE_FLOAT;
 	return (TG_OK);
 }
 

@@ -92,8 +92,8 @@ void tg_init(uint8_t default_src)
 
 void tg_reset(void)
 {
-	mp_flush_planner();
-	tg_system_reset();
+//	mp_flush_planner();
+//	tg_system_reset();
 	tg_application_reset();
 }
 
@@ -123,7 +123,13 @@ void tg_application_startup(void)
  * Useful reference on state machines:
  * http://johnsantic.com/comp/state.html, "Writing Efficient State Machines in C"
  */
-void tg_controller() { while (true) { _controller_HSM();}}
+void tg_controller() 
+{ 
+	while (true) { 
+		_controller_HSM();
+	}
+}
+
 #define	DISPATCH(func) if (func == TG_EAGAIN) return; 
 static void _controller_HSM()
 {
@@ -214,12 +220,7 @@ void tg_reset_source()
 
 void tg_set_active_source(uint8_t dev)
 {
-	tg.src = dev;							// dev = XIO device #. See xio.h
-	if (tg.src == XIO_DEV_PGM) {
-		tg.prompt_enabled = false;
-	} else {
-		tg.prompt_enabled = true;
-	}
+	tg.src = dev;								// dev = XIO device #. See xio.h
 }
 
 /***************************************************************************** 
@@ -258,18 +259,18 @@ static uint8_t _dispatch()
 			break;
 		}
 		case 'H': { 							// intercept help screens
-			cfg.communications_mode = TG_TEXT_MODE;
+			cfg.comm_mode = TG_TEXT_MODE;
 			help_print_general_help();
 			_dispatch_return(TG_OK, tg.in_buf);
 			break;
 		}
 		case '$': case '?':{ 					// text-mode config and query
-			cfg.communications_mode = TG_TEXT_MODE;
-			_dispatch_return(cfg_config_parser(tg.in_buf), tg.in_buf);
+			cfg.comm_mode = TG_TEXT_MODE;
+			_dispatch_return(cfg_text_parser(tg.in_buf), tg.in_buf);
 			break;
 		}
 		case '{': { 							// JSON input
-			cfg.communications_mode = TG_JSON_MODE;
+			cfg.comm_mode = TG_JSON_MODE;
 			_dispatch_return(js_json_parser(tg.in_buf), tg.out_buf); 
 			break;
 		}
@@ -282,7 +283,7 @@ static uint8_t _dispatch()
 
 void _dispatch_return(uint8_t status, char *buf)
 {
-	if (cfg.communications_mode == TG_JSON_MODE) {
+	if (cfg.comm_mode == TG_JSON_MODE) {
 //		cmd_print_list(status, TEXT_INLINE_PAIRS);
 		return;
 	}
@@ -323,7 +324,7 @@ static const char msg_sc11[] PROGMEM = "No such device";
 static const char msg_sc12[] PROGMEM = "Buffer empty";
 static const char msg_sc13[] PROGMEM = "Buffer full - fatal";
 static const char msg_sc14[] PROGMEM = "Buffer full - non-fatal";
-static const char msg_sc15[] PROGMEM = "#15";
+static const char msg_sc15[] PROGMEM = "Initializing";
 static const char msg_sc16[] PROGMEM = "#16";
 static const char msg_sc17[] PROGMEM = "#17";
 static const char msg_sc18[] PROGMEM = "#18";
@@ -398,7 +399,7 @@ static const char prompt_mm[] PROGMEM = "[mm] ok> ";
 
 char *tg_get_status_message(uint8_t status, char *msg) 
 {
-	strncpy_P(msg,(const char*)pgm_read_word(&msgStatusMessage[status]), STATUS_MESSAGE_LEN);
+	strncpy_P(msg,(PGM_P)pgm_read_word(&msgStatusMessage[status]), STATUS_MESSAGE_LEN);
 	return (msg);
 }
 
@@ -413,7 +414,7 @@ static void _prompt_ok()
 
 static void _prompt_error(uint8_t status, char *buf)
 {
-	fprintf_P(stderr, PSTR("error: %S: %s \n"),(const char*)pgm_read_word(&msgStatusMessage[status]),buf);
+	fprintf_P(stderr, PSTR("error: %S: %s \n"),(PGM_P)pgm_read_word(&msgStatusMessage[status]),buf);
 }
 
 /**** Application Messages *********************************************************
@@ -443,17 +444,27 @@ void tg_print_message(char *msg)
 void tg_print_message_number(uint8_t msgnum) 
 {
 	char msg[APPLICATION_MESSAGE_LEN];
-	strncpy_P(msg,(const char*)pgm_read_word(&msgApplicationMessage[msgnum]), APPLICATION_MESSAGE_LEN);
+	strncpy_P(msg,(PGM_P)pgm_read_word(&msgApplicationMessage[msgnum]), APPLICATION_MESSAGE_LEN);
 	tg_print_message(msg);
 }
 
-void tg_print_configuration_profile(void)
+void tg_print_loading_configs_message(void)
 {
-	cmd_add_string("msg", INIT_CONFIGURATION_MESSAGE); // see settings.h & sub-headers
-	cmd_print_list(TG_OK, TEXT_MULTILINE_FORMATTED);
+	cmd_add_token("fv");
+	cmd_add_token("fb");
+	cmd_add_string("msg", "Loading configs from EEPROM");
+	cmd_print_list(TG_INITIALIZING, TEXT_MULTILINE_FORMATTED);
 }
 
-void tg_print_system_ready(void)
+void tg_print_initializing_message(void)
+{
+	cmd_add_token("fv");
+	cmd_add_token("fb");
+	cmd_add_string("msg", INIT_CONFIGURATION_MESSAGE); // see settings.h & sub-headers
+	cmd_print_list(TG_INITIALIZING, TEXT_MULTILINE_FORMATTED);
+}
+
+void tg_print_system_ready_message(void)
 {
 	cmd_add_token("fv");
 	cmd_add_token("fb");

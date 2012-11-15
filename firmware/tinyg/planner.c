@@ -19,6 +19,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -27,22 +28,29 @@
  */
 /* --- Planner Notes ----
  *
- *	The planner works below the canonical machine and above the motor mapping and stepper 
- *	execution layers. A rudimentary multitasking capability is implemented for long-running
- *	commands such as lines, arcs, and dwells. These functions are coded as non-blocking 
- *	continuations - which are simple state machines that are re-entered multiple times until 
- *	a particular operation is complete. These functions have 2 parts - the initial call, 
- *	which sets up the local context, and callbacks (continuations) that are called from 
- *	the main loop (in controller.c).
+ *	The planner works below the canonical machine and above the motor mapping 
+ *	and stepper execution layers. A rudimentary multitasking capability is 
+ *	implemented for long-running commands such as lines, arcs, and dwells. 
+ *	These functions are coded as non-blocking continuations - which are simple 
+ *	state machines that are re-entered multiple times until a particular 
+ *	operation is complete. These functions have 2 parts - the initial call, 
+ *	which sets up the local context, and callbacks (continuations) that are 
+ *	called from the main loop (in controller.c).
  *
- *	One important concept is isolation of the Gcode model from the planner runtime model.
- *	Functions that are called from the canonical_machine to set up operations (e.g. mp_aline(), 
- *	mp_dwell()) can get their data from the gcode model, but generally should do this using 
- *	cm_get_xxxx functions. Callbacks (e.g. functions like _exec_aline(), _exec_dwell()) 
- *	should work from the buffer (bf) and their singletons (e.g. mr.) and never call the 
- *	gcode model - which may have changed.
+ *	One important concept is isolation of the three layers of the data model - 
+ *	the Gcode model (gm), planner model (bf queue & mm), and runtime model (mr).
+ *	These are designated as "model", "planner" and "runtime" in function names.
  *
- *	For info on how the planner buffers are handled scan down for PLANNER BUFFERS
+ *	The Gcode model is owned by the canonical machine and should only be accessed
+ *	by cm_xxxx() functions. Data from the Gcode model is transferred to the planner
+ *	by the mp_xxx() functions called by the canonical machine. 
+ *
+ *	The planner should only use data in the planner model. When a move (block) 
+ *	is ready for execution the planner data is transferred to the runtime model, 
+ *	which should also be isolated.
+ *
+ *	Lower-level models should never use data from upper-level models as the data 
+ *	may have changed and lead to unpredictable results.
  */
 
 #include <stdlib.h>
@@ -67,6 +75,9 @@
 #include "test.h"
 #include "xio/xio.h"			// supports trap and debug statements
 
+#define __EXEC_R2				// comment out to use R1 aline exec functions
+#define __JUNCTION_VMAX_R2		// comment out ot use the old code
+
 // All the enums that equal zero must be zero. Don't change this
 
 enum mpBufferState {			// bf->buffer_state values 
@@ -78,11 +89,11 @@ enum mpBufferState {			// bf->buffer_state values
 };
 
 struct mpBuffer {				// See Planning Velocity Notes for variable usage
-	uint32_t linenum;			// runtime line number; or line index if not numbered
-	uint32_t lineindex;			// runtime autoincremented line index
 	struct mpBuffer *pv;		// static pointer to previous buffer
 	struct mpBuffer *nx;		// static pointer to next buffer
 //	uint8_t (*exec_func)(double parameter); // callback to function to execute w/parameter
+	uint32_t linenum;			// runtime line number; or line index if not numbered
+	uint32_t lineindex;			// runtime autoincremented line index
 	fptrCallback callback;		// callback to execution function
 	uint8_t buffer_state;		// used to manage queueing/dequeueing
 	uint8_t move_type;			// used to dispatch to run routine
@@ -110,8 +121,8 @@ struct mpBuffer {				// See Planning Velocity Notes for variable usage
 	double braking_velocity;	// current value for braking velocity
 
 	double jerk;				// maximum linear jerk term for this move
-	double recip_jerk;			// 1/Jm used for planning (compute-once term)
-	double cubert_jerk;			// pow(Jm,(1/3)) used for planning (compute-once)
+	double recip_jerk;			// 1/Jm used for planning (compute-once)
+	double cbrt_jerk;			// cube root of Jm used for planning (compute-once)
 };
 typedef struct mpBuffer mpBuf;
 #define spindle_speed time		// alias spindle_speed to the time variable
@@ -126,9 +137,11 @@ struct mpBufferPool {			// ring buffer for sub-moves
 };
 
 struct mpMoveMasterSingleton {	// common variables for planning (move master)
-	uint32_t linenum;			// runtime line/block number of BF being planned
 	uint32_t lineindex;			// runtime line index of BF being planned
 	double position[AXES];		// final move position for planning purposes
+	double prev_jerk;			// jerk values cached from previous move
+	double prev_recip_jerk;
+	double prev_cbrt_jerk;
 #ifdef __UNIT_TEST_PLANNER
 	double test_case;
 	double test_velocity;
@@ -138,9 +151,9 @@ struct mpMoveMasterSingleton {	// common variables for planning (move master)
 };
 
 struct mpMoveRuntimeSingleton {	// persistent runtime variables
+//	uint8_t (*run_move)(struct mpBuffer *m); // currently running move - left in for reference
 	uint32_t linenum;			// runtime line/block number of BF being executed
 	uint32_t lineindex;			// runtime line index of BF being executed
-//	uint8_t (*run_move)(struct mpBuffer *m); // currently running move - left in for reference
 	uint8_t move_state;			// state of the overall move
 	uint8_t section_state;		// state within a move section
 
@@ -158,20 +171,26 @@ struct mpMoveRuntimeSingleton {	// persistent runtime variables
 
 	double length;				// length of line in mm
 	double move_time;			// total running time (derived)
-	double accel_time;			// total pseudo-time for acceleration calculation
-	double elapsed_accel_time;	// current running time for accel calculation
 	double midpoint_velocity;	// velocity at accel/decel midpoint
-	double midpoint_acceleration;//acceleration at the midpoint
 	double jerk;				// max linear jerk
-	double jerk_div2;			// max linear jerk divided by 2
 
 	double segments;			// number of segments in arc or blend
 	uint32_t segment_count;		// count of running segments
 	double segment_move_time;	// actual time increment per aline segment
-	double segment_accel_time;	// time increment for accel computation purposes
 	double microseconds;		// line or segment time in microseconds
 	double segment_length;		// computed length for aline segment
 	double segment_velocity;	// computed velocity for aline segment
+
+#ifdef __EXEC_R2
+	double forward_diff_1;      // forward difference level 1 (Acceleration)
+	double forward_diff_2;      // forward difference level 2 (Jerk - constant)
+#else
+	double accel_time;			// total pseudo-time for acceleration calculation
+	double elapsed_accel_time;	// current running time for accel calculation
+	double midpoint_acceleration;//acceleration at the midpoint
+	double jerk_div2;			// max linear jerk divided by 2
+	double segment_accel_time;	// time increment for accel computation purposes
+#endif
 };
 
 static struct mpBufferPool mb;			// move buffer queue
@@ -194,8 +213,11 @@ static void _calculate_trapezoid(mpBuf *bf);
 static double _get_target_length(const double Vi, const double Vt, const mpBuf *bf);
 static double _get_target_velocity(const double Vi, const double L, const mpBuf *bf);
 static double _get_junction_vmax(const double a_unit[], const double b_unit[]);
-static double _get_junction_deviation(const double a_unit[], const double b_unit[]);
 static void _reset_replannable_list(void);
+
+#ifndef __JUNCTION_VMAX_R2
+static double _get_junction_deviation(const double a_unit[], const double b_unit[]);
+#endif
 
 // execute routines (NB: These are all called from the LO interrupt)
 static uint8_t _exec_null(mpBuf *bf);
@@ -206,6 +228,7 @@ static uint8_t _exec_mcode(mpBuf *bf);
 static uint8_t _exec_tool(mpBuf *bf);
 static uint8_t _exec_spindle_speed(mpBuf *bf);
 static uint8_t _exec_aline(mpBuf *bf);
+static void _init_forward_diffs(double t0, double t2);
 static uint8_t _exec_aline_head(void);
 static uint8_t _exec_aline_body(void);
 static uint8_t _exec_aline_tail(void);
@@ -213,7 +236,6 @@ static uint8_t _exec_aline_segment(uint8_t correction_flag);
 
 // planning buffer routines
 static void _init_buffers(void);
-static void _unget_write_buffer(void);
 static void _clear_buffer(mpBuf *bf); 
 static void _copy_buffer(mpBuf *bf, const mpBuf *bp);
 static void _queue_write_buffer(const uint8_t move_type);
@@ -222,6 +244,7 @@ static mpBuf * _get_write_buffer(void);
 static mpBuf * _get_run_buffer(void);
 static mpBuf * _get_first_buffer(void);
 static mpBuf * _get_last_buffer(void);
+//static void _unget_write_buffer(void);
 
 #ifdef __DEBUG
 static uint8_t _get_buffer_index(mpBuf *bf); 
@@ -292,6 +315,7 @@ void mp_flush_planner()
  * mp_get_runtime_velocity()	- returns current velocity (aggregate)
  * mp_get_runtime_linenum()		- returns currently executing line number
  * mp_get_runtime_lineindex()	- returns currently executing line index
+ * mp_set_planner_lineindex()	- set line index in MM struct
  *
  * 	Keeping track of position is complicated by the fact that moves can
  *	require multiple reference frames. The scheme to keep this straight is:
@@ -334,6 +358,12 @@ double mp_get_runtime_position(uint8_t axis) { return (mr.position[axis]);}
 double mp_get_runtime_velocity(void) { return (mr.segment_velocity);}
 double mp_get_runtime_linenum(void) { return (mr.linenum);}
 double mp_get_runtime_lineindex(void) { return (mr.lineindex);}
+
+void mp_set_planner_lineindex(uint32_t lineindex)
+{
+	mm.lineindex = lineindex;
+	mr.lineindex = lineindex;
+}
 
 /*************************************************************************/
 /* mp_exec_move() - execute runtime functions to prep move for steppers
@@ -539,20 +569,15 @@ static uint8_t _exec_dwell(mpBuf *bf)	// NEW
 uint8_t mp_line(const double target[], const double minutes)
 {
 	mpBuf *bf;
+	double length = get_axis_vector_length(target, mr.position);
 
-	if (minutes < EPSILON) {
-		return (TG_ZERO_LENGTH_MOVE);
-	}
-	if ((bf = _get_write_buffer()) == NULL) {	// get write buffer or fail
-		return (TG_BUFFER_FULL_FATAL);			// (not supposed to fail)
-	}
+	if (minutes < EPSILON) { return (TG_ZERO_LENGTH_MOVE);}
+	if (length < EPSILON) { return (TG_ZERO_LENGTH_MOVE);}
+	if ((bf = _get_write_buffer()) == NULL) { return (TG_BUFFER_FULL_FATAL);} // never supposed to fail
+
 	bf->time = minutes;
+	bf->length = length;
 	copy_axis_vector(bf->target, target);		// target to bf_target
-	bf->length = get_axis_vector_length(target, mr.position);
-	if (bf->length < EPSILON) {
-		_unget_write_buffer();					// free buffer if early exit
-		return (TG_ZERO_LENGTH_MOVE);
-	}
 	bf->cruise_vmax = bf->length / bf->time;	// for yuks
 	_queue_write_buffer(MOVE_TYPE_LINE);
 	copy_axis_vector(mm.position, bf->target);	// update planning position
@@ -592,6 +617,10 @@ static uint8_t _exec_line(mpBuf *bf)
  *
  * 	Note: All math is done in absolute coordinates using "double precision" 
  *	floating point (even though AVRgcc does this as single precision)
+ *
+ *	Note: returning a status that is not TG_OK means the endpoint is NOT
+ *	advanced. So lines that are too short to move will accumulate and get 
+ *	executed once the accumlated error exceeds the minimums 
  */
 
 uint8_t mp_aline(const double target[], const double minutes)
@@ -599,37 +628,47 @@ uint8_t mp_aline(const double target[], const double minutes)
 	mpBuf *bf; 						// current move pointer
 	double exact_stop = 0;
 	double junction_velocity;
-	double length = get_axis_vector_length(target, mm.position);
-	uint8_t mr_flag = false;
 
 	// trap error conditions
 	if (minutes < EPSILON) { return (TG_ZERO_LENGTH_MOVE);}
+
+	double length = get_axis_vector_length(target, mm.position);
 	if (length < EPSILON) { return (TG_ZERO_LENGTH_MOVE);}
 
 	// get a cleared buffer and setup move variables
-	if ((bf = _get_write_buffer()) == NULL) {	// get buffer or die trying
-		return (TG_BUFFER_FULL_FATAL);			// (not supposed to fail)
-	}
-	bf->linenum = cm_get_model_linenum();
-	bf->lineindex = cm_get_model_lineindex();
-	mm.linenum = bf->linenum;					// block being planned
-	mm.lineindex = bf->lineindex;				// block being planned
+	if ((bf = _get_write_buffer()) == NULL) { return (TG_BUFFER_FULL_FATAL);} // never supposed to fail
 
+	bf->linenum = cm_get_model_linenum();		// block being planned
 	bf->time = minutes;
 	bf->length = length;
 	copy_axis_vector(bf->target, target); 		// set target for runtime
-	set_unit_vector(bf->unit, bf->target, mm.position);
 
-	// initialize jerk terms (these are in sequence)
+	// set unit vector (this used to be a called function but this is more time efficient)
+	bf->unit[X] = (target[X] - mm.position[X]) / length;	// the compiler would probably do
+	bf->unit[Y] = (target[Y] - mm.position[Y]) / length;	// this for me but what the hey
+	bf->unit[Z] = (target[Z] - mm.position[Z]) / length;
+	bf->unit[A] = (target[A] - mm.position[A]) / length;
+	bf->unit[B] = (target[B] - mm.position[B]) / length;
+	bf->unit[C] = (target[C] - mm.position[C]) / length;
+
+	// Initialize jerk terms (these code blocks are in sequence - mess with care)
+	// This section attempts to re-use jerk terms computed from previous move if possible 
 	bf->jerk = sqrt(square(bf->unit[X] * cfg.a[X].jerk_max) +
 					square(bf->unit[Y] * cfg.a[Y].jerk_max) +
 					square(bf->unit[Z] * cfg.a[Z].jerk_max) +
 					square(bf->unit[A] * cfg.a[A].jerk_max) +
 					square(bf->unit[B] * cfg.a[B].jerk_max) +
 					square(bf->unit[C] * cfg.a[C].jerk_max));
-	bf->recip_jerk = 1/bf->jerk;				// used by planning
-	bf->cubert_jerk = cubert(bf->jerk);			// used by planning
-//	bf->cubert_jerk = pow(bf->jerk, 0.333333);	// used by planning
+	if (fabs(bf->jerk - mm.prev_jerk) < JERK_MATCH_PRECISION) {	// can we re-use jerk terms?
+		bf->cbrt_jerk = mm.prev_cbrt_jerk;
+		bf->recip_jerk = mm.prev_recip_jerk;
+	} else {
+		bf->cbrt_jerk = cbrt(bf->jerk);
+		bf->recip_jerk = 1/bf->jerk;			
+		mm.prev_jerk = bf->jerk;
+		mm.prev_cbrt_jerk = bf->cbrt_jerk;
+		mm.prev_recip_jerk = bf->recip_jerk;
+	}
 
 	// finish up the current block variables
 	if (cm_get_path_control() != PATH_EXACT_STOP) { // exact stop cases already zeroed
@@ -643,10 +682,10 @@ uint8_t mp_aline(const double target[], const double minutes)
 	bf->exit_vmax = min3(bf->cruise_vmax, (bf->entry_vmax + bf->delta_vmax), exact_stop);
 	bf->braking_velocity = bf->delta_vmax;
 
-	_plan_block_list(bf, &mr_flag);	// replan the block list and commit the current block
+	uint8_t mr_flag = false;
+	_plan_block_list(bf, &mr_flag);				// replan block list and commit current block
 	copy_axis_vector(mm.position, bf->target);	// update planning position
 	_queue_write_buffer(MOVE_TYPE_ALINE);
-	mm.linenum = 0;								// indicates no block being planned
 	return (TG_OK);
 }
 
@@ -680,7 +719,7 @@ uint8_t mp_aline(const double target[], const double minutes)
  *	  bf->delta_vmax		- used during forward planning to set exit velocity
  *
  *	  bf->recip_jerk		- used during trapezoid generation
- *	  bf->cubert_jerk		- used during trapezoid generation
+ *	  bf->cbrt_jerk			- used during trapezoid generation
  *
  *	Variables that will be set during processing:
  *
@@ -994,7 +1033,7 @@ static void _calculate_trapezoid(mpBuf *bf)
  *	 d)	Vt = (sqrt(L)*(L/sqrt(1/Jm))^(1/6)+(1/Jm)^(1/4)*Vi)/(1/Jm)^(1/4)
  *	 e)	Vt = L^(2/3) * Jm^(1/3) + Vi
  *
- * FYI: Here's an expression that returns the jerk for a given deltaV and L:
+ *  FYI: Here's an expression that returns the jerk for a given deltaV and L:
  * 	return(cube(deltaV / (pow(L, 0.66666666))));
  */
 static double _get_target_length(const double Vi, const double Vt, const mpBuf *bf)
@@ -1004,7 +1043,7 @@ static double _get_target_length(const double Vi, const double Vt, const mpBuf *
 
 static double _get_target_velocity(const double Vi, const double L, const mpBuf *bf)
 {
-	return (pow(L, 0.66666666) * bf->cubert_jerk + Vi);
+	return (pow(L, 0.66666666) * bf->cbrt_jerk + Vi);
 }
 
 /*
@@ -1045,15 +1084,58 @@ static double _get_target_velocity(const double Vi, const double L, const mpBuf 
  *	double theta = acos(costheta);
  *	double radius = delta * sin(theta/2)/(1-sin(theta/2));
  */
-
+/*  This version function extends Chamnit's algorithm by computing a value
+ *	for delta that takes the contributions of the individual axes in the 
+ *	move into account. It allows the radius of curvature to vary by axis.
+ *	This is necessary to support axes that have different dynamics; such 
+ *	as a Z axis that doesn't move as fast as X and Y (such as a screw driven 
+ *	Z axis on machine with a belt driven XY - like a Shapeoko), or rotary 
+ *	axes ABC that have completely different dynamics than their linear 
+ *	counterparts.
+ *
+ *	The function takes the absolute values of the sum of the unit vector
+ *	components as a measure of contribution to the move, then scales the 
+ *	delta values from the non-zero axes into a composite delta to be used
+ *	for the move. Shown for an XY vector:
+ *
+ *	 U[i]	Unit sum of i'th axis	fabs(unit_a[i]) + fabs(unit_b[i])
+ *	 Usum	Length of sums			Ux + Uy
+ *	 d		Delta of sums			(Dx*Ux+DY*UY)/Usum
+ */
 static double _get_junction_vmax(const double a_unit[], const double b_unit[])
 {
-	double costheta = - a_unit[X] * b_unit[X]
-					  - a_unit[Y] * b_unit[Y]
-					  - a_unit[Z] * b_unit[Z]
-					  - a_unit[A] * b_unit[A]
-					  - a_unit[B] * b_unit[B]
-					  - a_unit[C] * b_unit[C];
+#ifdef __JUNCTION_VMAX_R2
+	double costheta = - (a_unit[X] * b_unit[X]) - (a_unit[Y] * b_unit[Y]) 
+					  - (a_unit[Z] * b_unit[Z]) - (a_unit[A] * b_unit[A]) 
+					  - (a_unit[B] * b_unit[B]) - (a_unit[C] * b_unit[C]);
+
+	if (costheta < -0.99) { return (10000000); } 		// straight line cases
+	if (costheta > 0.99)  { return (0); } 				// reversal cases
+
+	// fuse the junction deviations into a vector sum
+	double a_delta = square(a_unit[X] * cfg.a[X].junction_dev);
+	a_delta += square(a_unit[Y] * cfg.a[Y].junction_dev);
+	a_delta += square(a_unit[Z] * cfg.a[Z].junction_dev);
+	a_delta += square(a_unit[A] * cfg.a[A].junction_dev);
+	a_delta += square(a_unit[B] * cfg.a[B].junction_dev);
+	a_delta += square(a_unit[C] * cfg.a[C].junction_dev);
+
+	double b_delta = square(b_unit[X] * cfg.a[X].junction_dev);
+	b_delta += square(b_unit[Y] * cfg.a[Y].junction_dev);
+	b_delta += square(b_unit[Z] * cfg.a[Z].junction_dev);
+	b_delta += square(b_unit[A] * cfg.a[A].junction_dev);
+	b_delta += square(b_unit[B] * cfg.a[B].junction_dev);
+	b_delta += square(b_unit[C] * cfg.a[C].junction_dev);
+
+	double delta = (sqrt(a_delta) + sqrt(b_delta))/2;
+	double sintheta_over2 = sqrt((1 - costheta)/2);
+	double radius = delta * sintheta_over2 / (1-sintheta_over2);
+	return(sqrt(radius * cfg.junction_acceleration));
+
+#else
+	double costheta = - (a_unit[X] * b_unit[X]) - (a_unit[Y] * b_unit[Y]) 
+					  - (a_unit[Z] * b_unit[Z]) - (a_unit[A] * b_unit[A]) 
+					  - (a_unit[B] * b_unit[B]) - (a_unit[C] * b_unit[C]);
 
 	if (costheta < -0.99) { return (10000000); } 		// straight line cases
 	if (costheta > 0.99)  { return (0); } 				// reversal cases
@@ -1062,6 +1144,7 @@ static double _get_junction_vmax(const double a_unit[], const double b_unit[])
 	double sintheta_over2 = sqrt((1 - costheta)/2);
 	double radius = delta * sintheta_over2 / (1-sintheta_over2);
 	return(sqrt(radius * cfg.junction_acceleration));
+#endif
 }
 
 /*	
@@ -1085,6 +1168,7 @@ static double _get_junction_vmax(const double a_unit[], const double b_unit[])
  *	 Usum	Length of sums			Ux + Uy
  *	 d		Delta of sums			(Dx*Ux+DY*UY)/Usum
  */
+#ifndef __JUNCTION_VMAX_R2
 
 static double _get_junction_deviation(const double a_unit[], const double b_unit[])
 {
@@ -1098,6 +1182,7 @@ static double _get_junction_deviation(const double a_unit[], const double b_unit
 	double d = (sqrt(a_delta) + sqrt(b_delta))/2;
 	return (d);
 }
+#endif
 
 /*************************************************************************
  * feedholds - functions for performing holds
@@ -1345,7 +1430,6 @@ static uint8_t _exec_aline(mpBuf *bf)
 		// initialization to process the new incoming bf buffer
 		bf->replannable = false;
 		if (bf->length < EPSILON) {
-//			fprintf_P(stderr, PSTR("***exec_aline()*** LINE TOO SHORT L:%f\n"),bf->length);
 			mr.move_state = MOVE_STATE_OFF;			// reset mr buffer
 			mr.section_state = MOVE_STATE_OFF;
 			bf->nx->replannable = false;			// prevent overplanning (Note 2)
@@ -1359,7 +1443,9 @@ static uint8_t _exec_aline(mpBuf *bf)
 		mr.linenum = bf->linenum;
 		mr.lineindex = bf->lineindex;
 		mr.jerk = bf->jerk;
+#ifndef __EXEC_R2
 		mr.jerk_div2 = bf->jerk/2;
+#endif
 		mr.head_length = bf->head_length;
 		mr.body_length = bf->body_length;
 		mr.tail_length = bf->tail_length;
@@ -1377,10 +1463,10 @@ static uint8_t _exec_aline(mpBuf *bf)
 		case (MOVE_STATE_HEAD): { status = _exec_aline_head(); break;}
 		case (MOVE_STATE_BODY): { status = _exec_aline_body(); break;}
 		case (MOVE_STATE_TAIL): { status = _exec_aline_tail(); break;}
-		case (MOVE_STATE_SKIP): { status = TG_OK; break;}
         default:
             status = TG_OK;     // catch all?
             break;
+		case (MOVE_STATE_SKIP): { status = TG_OK; break;}
 	}
 
 	// feed hold post-processing
@@ -1414,10 +1500,91 @@ static uint8_t _exec_aline(mpBuf *bf)
 	return (status);
 }
 
+/* Forward difference math explained:
+ * We're using two quadraic curve end-to-end, forming the
+ * concave and convex section of the s-curve.
+ * For each half, we have three points:
+ * T[0] is the start point, or the entro or middle of the "s". This will be one of:
+ *    entry_velocity (acceleration concave),
+ *    cruise_velocity (deceleration concave), or
+ *    midpoint_velocity (convex)
+ * T[1] is the "control point" set to T[0] for concave sections, and T[2] for convex
+ * T[2] is the end point of the quadratic, which will be the midpoint or endpoint of the s.
+ *
+ *  TODO MATH EXPLANATION
+ *  
+ *  A = T[0] - 2*T[1] + T[2]
+ *  B = 2 * (T[1] - T[0])
+ *  C = T[0]
+ *  h = (1/mr.segments)
+
+ *  forward_diff_1 = Ah²+Bh = (T[0] - 2*T[1] + T[2])h*h + (2 * (T[1] - T[0]))h
+ *  forward_diff_2 = 2Ah² = 2*(T[0] - 2*T[1] + T[2])h*h
+ */
+
+// NOTE: t1 will always be == t0, so we don't pass it
+static void _init_forward_diffs(double t0, double t2)
+{
+#ifdef __EXEC_R2
+	double H_squared = square(1/mr.segments);
+	// A = T[0] - 2*T[1] + T[2], if T[0] == T[1], then it becomes - T[0] + T[2]
+	double AH_squared = (t2 - t0) * H_squared;
+	
+	// Ah²+Bh, and B=2 * (T[1] - T[0]), if T[0] == T[1], then it becomes simply Ah²
+	mr.forward_diff_1 = AH_squared;
+	mr.forward_diff_2 = 2*AH_squared;
+	mr.segment_velocity = t0;
+#endif
+}
+
 /*
  * _exec_aline_head()
  */
 static uint8_t _exec_aline_head()
+#ifdef __EXEC_R2
+{
+	if (mr.section_state == MOVE_STATE_NEW) {	// initialize the move singleton (mr)
+		if (mr.head_length < EPSILON) { 
+			mr.move_state = MOVE_STATE_BODY;
+			return(_exec_aline_body());			// skip ahead to the body generator
+		}
+		mr.midpoint_velocity = (mr.entry_velocity + mr.cruise_velocity) / 2;
+		mr.move_time = mr.head_length / mr.midpoint_velocity;	// time for entire accel region
+		mr.segments = ceil(uSec(mr.move_time) / (2 * cfg.estd_segment_usec)); // # of segments in *each half*
+		mr.segment_move_time = mr.move_time / (2 * mr.segments);
+		mr.segment_count = (uint32_t)mr.segments;
+		if ((mr.microseconds = uSec(mr.segment_move_time)) < MIN_SEGMENT_USEC) {
+			return(TG_GCODE_BLOCK_SKIPPED);		// exit without advancing position
+		}
+		_init_forward_diffs(mr.entry_velocity, mr.midpoint_velocity);
+		mr.section_state = MOVE_STATE_RUN1;
+	}
+	if (mr.section_state == MOVE_STATE_RUN1) {	// concave part of accel curve (period 1)
+		mr.segment_velocity += mr.forward_diff_1;
+		if (_exec_aline_segment(false) == TG_COMPLETE) { 	  	// set up for second half
+			mr.segment_count = (uint32_t)mr.segments;
+			mr.section_state = MOVE_STATE_RUN2;
+
+			// Here's a trick: The second half of the S starts at the end of the first,
+			//  And the only thing that changes is the sign of mr.forward_diff_2
+			mr.forward_diff_2 = -mr.forward_diff_2;
+		} else {
+			mr.forward_diff_1 += mr.forward_diff_2;
+		}
+		return(TG_EAGAIN);
+	}
+	if (mr.section_state == MOVE_STATE_RUN2) {	// convex part of accel curve (period 2)
+		mr.segment_velocity += mr.forward_diff_1;
+		mr.forward_diff_1 += mr.forward_diff_2;
+		if (_exec_aline_segment(false) == TG_COMPLETE) {
+			if ((mr.body_length < EPSILON) && (mr.tail_length < EPSILON)) { return(TG_OK);}	// end the move
+			mr.move_state = MOVE_STATE_BODY;
+			mr.section_state = MOVE_STATE_NEW;
+		}
+	}
+	return(TG_EAGAIN);
+}
+#else
 {
 	if (mr.section_state == MOVE_STATE_NEW) {	// initialize the move singleton (mr)
 		if (mr.head_length < EPSILON) { 
@@ -1458,6 +1625,7 @@ static uint8_t _exec_aline_head()
 	}
 	return(TG_EAGAIN);
 }
+#endif
 
 /*
  * _exec_aline_body()
@@ -1465,7 +1633,7 @@ static uint8_t _exec_aline_head()
  *	The body is broken into little segments even though it is a straight line so that 
  *	feedholds can happen in the middle of a line with a minimum of latency
  */
-static uint8_t _exec_aline_body() 
+static uint8_t _exec_aline_body()
 {
 	if (mr.section_state == MOVE_STATE_NEW) {
 		if (mr.body_length < EPSILON) {
@@ -1480,6 +1648,7 @@ static uint8_t _exec_aline_body()
 		if ((mr.microseconds = uSec(mr.segment_move_time)) < MIN_SEGMENT_USEC) {
 			return(TG_GCODE_BLOCK_SKIPPED);		// exit without advancing position
 		}
+		
 		mr.section_state = MOVE_STATE_RUN;
 	}
 	if (mr.section_state == MOVE_STATE_RUN) {				// stright part (period 3)
@@ -1495,7 +1664,44 @@ static uint8_t _exec_aline_body()
 /*
  * _exec_aline_tail()
  */
-static uint8_t _exec_aline_tail() 
+static uint8_t _exec_aline_tail()
+#ifdef __EXEC_R2
+{
+	if (mr.section_state == MOVE_STATE_NEW) {
+		if (mr.tail_length < EPSILON) { return(TG_OK);}		// end the move
+		mr.midpoint_velocity = (mr.cruise_velocity + mr.exit_velocity) / 2;
+		mr.move_time = mr.tail_length / mr.midpoint_velocity;
+		mr.segments = ceil(uSec(mr.move_time) / (2 * cfg.estd_segment_usec));// # of segments in *each half*
+		mr.segment_move_time = mr.move_time / (2 * mr.segments);// time to advance for each segment
+		mr.segment_count = (uint32_t)mr.segments;
+		if ((mr.microseconds = uSec(mr.segment_move_time)) < MIN_SEGMENT_USEC) {
+			return(TG_GCODE_BLOCK_SKIPPED);					// exit without advancing position
+		}
+		_init_forward_diffs(mr.cruise_velocity, mr.midpoint_velocity);
+		mr.section_state = MOVE_STATE_RUN1;
+	}
+	if (mr.section_state == MOVE_STATE_RUN1) {				// convex part (period 4)
+		mr.segment_velocity += mr.forward_diff_1;
+		if (_exec_aline_segment(false) == TG_COMPLETE) { 	  	// set up for second half
+			mr.segment_count = (uint32_t)mr.segments;
+			mr.section_state = MOVE_STATE_RUN2;
+
+			// Here's a trick: The second half of the S starts at the end of the first,
+			//  And the only thing that changes is the sign of mr.forward_diff_2
+			mr.forward_diff_2 = -mr.forward_diff_2;
+		} else {
+			mr.forward_diff_1 += mr.forward_diff_2;
+		}
+		return(TG_EAGAIN);
+	}
+	if (mr.section_state == MOVE_STATE_RUN2) {				// concave part (period 5)
+		mr.segment_velocity += mr.forward_diff_1;
+		mr.forward_diff_1 += mr.forward_diff_2;
+		if (_exec_aline_segment(true) == TG_COMPLETE) { return (TG_OK);}	// end the move
+	}
+	return(TG_EAGAIN);
+}
+#else
 {
 	if (mr.section_state == MOVE_STATE_NEW) {
 		if (mr.tail_length < EPSILON) { return(TG_OK);}		// end the move
@@ -1531,18 +1737,44 @@ static uint8_t _exec_aline_tail()
 	return(TG_EAGAIN);
 }
 
+#endif
 /*
  * _exec_aline_segment() - segment runner helper
  */
 static uint8_t _exec_aline_segment(uint8_t correction_flag)
 {
-	uint8_t i;
 	double travel[AXES];
 	double steps[MOTORS];
 
 	// Multiply computed length by the unit vector to get the contribution for
 	// each axis. Set the target in absolute coords and compute relative steps.
-	for (i=0; i < AXES; i++) {	// don;t do the error correction if you are going into a hold
+
+	if ((correction_flag == true) && (mr.segment_count == 1) && 
+		(cm.motion_state == MOTION_RUN) && (cm.cycle_state == CYCLE_STARTED)) {
+		mr.target[X] = mr.endpoint[X];	// rounding error correction for last segment
+		mr.target[Y] = mr.endpoint[Y];
+		mr.target[Z] = mr.endpoint[Z];
+		mr.target[A] = mr.endpoint[A];
+		mr.target[B] = mr.endpoint[B];
+		mr.target[C] = mr.endpoint[C];
+	} else {
+		double intermediate = mr.segment_velocity * mr.segment_move_time;
+		mr.target[X] = mr.position[X] + (mr.unit[X] * intermediate);
+		mr.target[Y] = mr.position[Y] + (mr.unit[Y] * intermediate);
+		mr.target[Z] = mr.position[Z] + (mr.unit[Z] * intermediate);
+		mr.target[A] = mr.position[A] + (mr.unit[A] * intermediate);
+		mr.target[B] = mr.position[B] + (mr.unit[B] * intermediate);
+		mr.target[C] = mr.position[C] + (mr.unit[C] * intermediate);
+	}
+	travel[X] = mr.target[X] - mr.position[X];
+	travel[Y] = mr.target[Y] - mr.position[Y];
+	travel[Z] = mr.target[Z] - mr.position[Z];
+	travel[A] = mr.target[A] - mr.position[A];
+	travel[B] = mr.target[B] - mr.position[B];
+	travel[C] = mr.target[C] - mr.position[C];
+
+/* The above is a re-arranged and loop unrolled version of this:
+	for (uint8_t i=0; i < AXES; i++) {	// don;t do the error correction if you are going into a hold
 		if ((correction_flag == true) && (mr.segment_count == 1) && 
 			(cm.motion_state == MOTION_RUN) && (cm.cycle_state == CYCLE_STARTED)) {
 			mr.target[i] = mr.endpoint[i];	// rounding error correction for last segment
@@ -1551,12 +1783,15 @@ static uint8_t _exec_aline_segment(uint8_t correction_flag)
 		}
 		travel[i] = mr.target[i] - mr.position[i];
 	}
+*/
 	// prep the segment for the steppers and adjust the variables for the next iteration
 	(void)ik_kinematics(travel, steps, mr.microseconds);
 	if (st_prep_line(steps, mr.microseconds) == TG_OK) {
 		copy_axis_vector(mr.position, mr.target); 	// update runtime position	
 	}
+#ifndef __EXEC_R2
 	mr.elapsed_accel_time += mr.segment_accel_time; // NB: ignored if running the body
+#endif
 	if (--mr.segment_count == 0) {
 		return (TG_COMPLETE);	// this section has run all its segments
 	}
@@ -1642,20 +1877,22 @@ static mpBuf * _get_write_buffer() 				// get & clear a buffer
 		w->nx = nx;								// restore pointers
 		w->pv = pv;
 		w->buffer_state = MP_BUFFER_LOADING;
-		mb.w = w->nx;
+		w->lineindex = (++mm.lineindex);		// increment line index and store in buffer
 		mb.buffers_available--;
+		mb.buffers_available--;
+		mb.w = w->nx;
 		return (w);
 	}
 	return (NULL);
 }
-
+/* NOT USED
 static void _unget_write_buffer()
 {
 	mb.w = mb.w->pv;							// queued --> write
 	mb.w->buffer_state = MP_BUFFER_EMPTY; 		// not loading anymore
 	mb.buffers_available++;
 }
-
+*/
 static void _queue_write_buffer(const uint8_t move_type)
 {
 	mb.q->move_type = move_type;
@@ -1842,9 +2079,9 @@ static void _test_trapezoid(double length, double Ve, double Vt, double Vx, mpBu
 	bf->exit_velocity = Vx;
 	bf->cruise_vmax = Vt;
 	bf->jerk = JERK_TEST_VALUE;
-	bf->recip_jerk = 1/bf->jerk;				// used by planning
-	bf->cubert_jerk = pow(bf->jerk, 0.333333);	// used by planning
-}
+	bf->recip_jerk = 1/bf->jerk;
+	bf->cbrt_jerk = cbrt(bf->jerk);
+
 	_calculate_trapezoid(bf);
 }
 

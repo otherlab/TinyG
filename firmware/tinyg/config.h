@@ -17,6 +17,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -84,10 +85,9 @@
  *	of CMD_NAME_LEN and CMD_VALUE_STRING_LEN which are statically allocated 
  *	and should be as short as possible. 
  */
-#define CMD_HEADER_LEN 2			// contains the "r" and "body" elements
-#define CMD_BODY_LEN 21				// main body
-#define CMD_FOOTER_LEN 3			// status code, msg, buffer count, line num, checksum and termination
-									// if you change this you must also change cmd_status, cmd_bufcount, etc, below
+#define CMD_HEADER_LEN 1			// body header element
+#define CMD_BODY_LEN 21				// body elements
+#define CMD_FOOTER_LEN 2			// footer element (includes terminator element)
 
 #define CMD_MAX_OBJECTS (CMD_BODY_LEN-1)// maximum number of objects in a body string
 #define CMD_TOTAL_LEN (CMD_HEADER_LEN + CMD_BODY_LEN + CMD_FOOTER_LEN)
@@ -102,9 +102,9 @@
 
 // Here are all the exceptions to the display and config rules, as neat little lists
 // NOTE: The number of SYSTEM_GROUP or SR_DEFAULTS elements cannot exceed CMD_MAX_OBJECTS
-#define GROUP_PREFIXES	"x,y,z,a,b,c,1,2,3,4,p,g54,g55,g56,g57,g58,g59"
+#define GROUP_PREFIXES	"x,y,z,a,b,c,1,2,3,4,g54,g55,g56,g57,g58,g59"
 #define GROUP_EXCLUSIONS "cycs,coor"	 // items that are not actually part of the xyzabcuvw0123456789 groups
-#define SYSTEM_GROUP 	"fv,fb,si,gpl,gun,gco,gpa,gdi,ja,ml,ma,mt,ic,il,ec,ee,ex,ej" // cats and dogs
+#define SYSTEM_GROUP 	"fv,fb,si,gpl,gun,gco,gpa,gdi,ja,ml,ma,mt,ic,il,ec,ee,ex,eq,ej" // cats and dogs
 #define DONT_INITIALIZE "gc,sr,te,he,de" // commands that should not be initialized
 #define DONT_PERSIST	"gc,te,de"		 // commands that should not be persisted
 #define SR_DEFAULTS 	"line","posx","posy","posz","posa","feed","vel","unit","coor","dist","frmo","momo","stat"
@@ -121,6 +121,7 @@ enum cmdType {						// object / value typing for config and JSON
 	TYPE_INTEGER,					// value is a uint32_t
 	TYPE_FLOAT,						// value is a floating point number
 	TYPE_STRING,					// value is in string field
+	TYPE_ARRAY,						// value is array element count, values are CSV ASCII in string field
 	TYPE_PARENT						// object is a parent to a sub-object
 };
 
@@ -134,10 +135,10 @@ enum cmdTextMode {					// these set the print modes for text output
 };
 
 struct cmdObject {					// depending on use, not all elements may be populated
+	struct cmdObject *pv;			// pointer to previous object or NULL if first object
+	struct cmdObject *nx;			// pointer to next object or NULL if last object
 	INDEX_T index;					// index of tokenized name, or -1 if no token (optional)
 	int8_t depth;					// depth of object in the tree. 0 is root (-1 is invalid)
-	struct cmdObject *nx;			// pointer to next object or NULL if last object
-	struct cmdObject *pv;			// pointer to previous object or NULL if first object
 	int8_t type;					// see cmdType
 	double value;					// numeric value
 	char token[CMD_TOKEN_LEN+1];	// mnemonic token
@@ -145,23 +146,23 @@ struct cmdObject {					// depending on use, not all elements may be populated
 	char string[CMD_STRING_LEN+1];	// string storage (See note below)
 }; 									// OK, so it's not REALLY an object
 typedef struct cmdObject cmdObj;	// handy typedef for command onjects
-typedef uint8_t (* const fptrCmd)(cmdObj *cmd);// required for cmd table access
-typedef void (* const fptrPrint)(cmdObj *cmd);	// required for PROGMEM access
+typedef uint8_t (*fptrCmd)(cmdObj *cmd);// required for cmd table access
+typedef void (*fptrPrint)(cmdObj *cmd);	// required for PROGMEM access
 
 // NOTE: Be aware: the string field is mainly used to carry string values, 
 // but is used as temp storage for the friendly_name during parsing to save RAM..
 #define friendly_name string			// used here as a friendly name field
 
 // Allocate memory for all objects that may be used in cmdObj lists
-cmdObj cmd_header[CMD_HEADER_LEN];	// header objects for JSON responses
+cmdObj cmd_header[CMD_HEADER_LEN];	// body headxer element
 cmdObj cmd_body[CMD_BODY_LEN];		// cmd_body[0] is the root object
-cmdObj cmd_footer[CMD_FOOTER_LEN];	// allocate footer objects for JSON response
+cmdObj cmd_footer[CMD_FOOTER_LEN];	// footer element
 
-#define cmd_status &cmd_footer[0]	// status code element
-//#define cmd_bufcount &cmd_footer[2]	// buffer available element
+//#define cmd_status &cmd_footer[0]	// status code element
+//#define f &cmd_footer[2]	// buffer available element
 //#define cmd_linenum &cmd_footer[3]	// line number element
-#define cmd_checksum &cmd_footer[1]	// checksum element
-#define cmd_terminal &cmd_footer[2]	// termination element
+//#define cmd_checksum &cmd_footer[1]	// checksum element
+//#define cmd_terminal &cmd_footer[2]	// termination element
 
 /*
  * Global Scope Functions
@@ -170,7 +171,7 @@ cmdObj cmd_footer[CMD_FOOTER_LEN];	// allocate footer objects for JSON response
 #define ASSERT_CMD_INDEX(a) if ((cmd->index < 0) || (cmd->index >= CMD_INDEX_MAX)) return (a);
 
 void cfg_init(void);
-uint8_t cfg_config_parser(char *str);
+uint8_t cfg_text_parser(char *str);
 void cfg_init_gcode_model(void);
 
 // cmd accessors
@@ -182,8 +183,8 @@ uint8_t cmd_get_cmdObj(cmdObj *cmd);
 
 INDEX_T cmd_get_max_index(void);
 cmdObj *cmd_clear(cmdObj *cmd);
+void cmd_clear_body(cmdObj *cmd);
 void cmd_clear_list(void);
-void cmd_clear_body(void);
 uint8_t cmd_add_token(char *token);
 uint8_t cmd_add_string(char *token, char *string);
 uint8_t cmd_add_float(char *token, double value);
@@ -235,7 +236,6 @@ struct cfgMotorParameters {
 	double travel_rev;				// mm or deg of travel per motor revolution
 	double steps_per_unit;			// steps (usteps)/mm or deg of travel
 };
-
 struct cfgPWMParameters {
   	double frequency;				// base frequency for PWM driver, in Hz
 	double cw_speed_lo;             // M03 minimum spindle speed [0..N]
@@ -248,6 +248,7 @@ struct cfgPWMParameters {
     double ccw_phase_hi;
     double phase_off;               // M05 pwm phase when spindle is disabled
 };
+
 
 struct cfgParameters {
 	uint8_t state;					// configuration state: 1=initialized, 0=not
@@ -277,8 +278,9 @@ struct cfgParameters {
 	uint8_t enable_cr;				// enable CR in CRFL expansion on TX
 	uint8_t enable_echo;			// enable echo - also used for gating JSON responses
 	uint8_t enable_xon;				// enable XON/XOFF mode
-	uint8_t communications_mode;	// TEXT or JSON mode
-	
+	uint8_t enable_qr;				// TRUE = queue reports enabled
+	uint8_t comm_mode;				// TEXT or JSON mode
+
 	// status report configs
 	uint32_t status_report_interval;// in MS. set non-zero to enable
 	INDEX_T status_report_spec[CMD_STATUS_REPORT_LEN];
@@ -288,8 +290,8 @@ struct cfgParameters {
 
 	// motor and axis structs
 	struct cfgMotorParameters m[MOTORS];// settings for motors 1-4
-	struct cfgAxisParameters a[AXES];	// settings for axes X,Y,Z,A B,C
     struct cfgPWMParameters p;          // settings for PWM p
+	struct cfgAxisParameters a[AXES];	// settings for axes X,Y,Z,A B,C
 };
 struct cfgParameters cfg; 			// declared in the header to make it global
 #define CFG(x) cfg.a[x]				// handy macro for referencing axis values,

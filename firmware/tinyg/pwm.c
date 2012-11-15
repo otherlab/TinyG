@@ -114,7 +114,7 @@ ISR(PWM2_ISR_vect)
  * pwm_set_freq() - set PWM channel frequency
  *
  *	channel	- PWM channel
- *	freq	- PWM frequency in Hz as a double
+ *	freq	- PWM frequency in Khz as a double
  *
  *	Assumes 32MHz clock.
  *	Doesn't turn time on until duty cycle is set

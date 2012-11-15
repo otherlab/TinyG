@@ -76,7 +76,7 @@ struct GCodeModel {						// Gcode model- meaning depends on context
 										// G82, G83 G84, G85, G86, G87, G88, G89 
 	uint8_t program_flow;				// currently vestigal - captured, but not uses
 	uint32_t linenum;					// N word or autoincrement in the model
-	uint32_t lineindex;					// autoincremented line index
+//	uint32_t lineindex;					// autoincremented line index
 
 	double target[AXES]; 				// XYZABC where the move should go
 	double position[AXES];				// XYZABC model position (Note: not used in gn or gf) 
@@ -201,18 +201,21 @@ struct GCodeInput gf;					// gcode input flags
  */
 // *** Note: check config printout strings align with all the state variables
 
+// #### LAYER 8 CRITICAL REGION ###
+// #### DO NOT CHANGE THESE ENUMERATIONS WITHOUT COMMUNITY INPUT #### 
 enum cmCombinedState {				// check alignment with messages in config.c / msg_stat strings
 	COMBINED_INITIALIZING = 0,		// machine is initializing
 	COMBINED_RESET,					// machine has been reset or aborted
-	COMBINED_CYCLE,					// machine is running (cycling)
 	COMBINED_PROGRAM_STOP,			// program stop or no more blocks
 	COMBINED_PROGRAM_END,			// program end
 	COMBINED_RUN,					// motion is running
 	COMBINED_HOLD,					// motion is holding
-	COMBINED_HOMING,				// homing cycle active
 	COMBINED_PROBE,					// probe cycle active
+	COMBINED_CYCLE,					// machine is running (cycling)
+	COMBINED_HOMING,				// homing is treated as a cycle
 	COMBINED_JOG					// jogging is treated as a cycle
 };
+//#### END CRITICAL REGION ####
 
 enum cmMachineState {
 	MACHINE_INITIALIZING = 0,		// machine is initializing
@@ -225,8 +228,8 @@ enum cmMachineState {
 enum cmCycleState {
 	CYCLE_OFF = 0,					// machine is idle
 	CYCLE_STARTED,					// machine in normal cycle
-	CYCLE_HOMING,					// machine in homing cycle
 	CYCLE_PROBE,					// machine in probe cycle
+	CYCLE_HOMING,					// homing is treated as a specialized cycle
 	CYCLE_JOG						// jogging is treated as a specialized cycle
 };
 

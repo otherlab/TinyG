@@ -69,6 +69,7 @@ static uint8_t _point(double value);
 
 void gc_init()
 {
+	gm.motion_mode = MOTION_MODE_CANCEL_MOTION_MODE;
 	return;
 }
 
@@ -341,7 +342,6 @@ static uint8_t _execute_gcode_block()
 	uint8_t status = TG_OK;
 
 	cm_set_model_linenum(gn.linenum);
-	cm_incr_model_lineindex();
 	EXEC_FUNC(cm_set_inverse_feed_rate_mode, inverse_feed_rate_mode);
 	EXEC_FUNC(cm_set_feed_rate, feed_rate);
 	EXEC_FUNC(cm_set_spindle_speed, spindle_speed);

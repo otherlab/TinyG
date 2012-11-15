@@ -18,7 +18,7 @@ COMMON = -mmcu=$(MCU)
 
 ## Compile options common for all C compilation units.
 CFLAGS = $(COMMON)
-CFLAGS += -Wall -gdwarf-2 -std=gnu99               -DF_CPU=32000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+CFLAGS += -Wall -gdwarf-2 -std=gnu99                             -DF_CPU=32000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d 
 
 ## Assembly specific flags
@@ -47,7 +47,6 @@ OBJECTS = util.o arc.o canonical_machine.o config.o controller.o cycle_homing.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
-
 
 ## Build
 all: $(TARGET) tinyg.hex tinyg.eep tinyg.lss size
@@ -162,13 +161,13 @@ $(TARGET): $(OBJECTS)
 
 size: ${TARGET}
 	@echo
-	@avr-size ${TARGET}
+	@avr-size -C --mcu=${MCU} ${TARGET}
 
-
-
-## Clean target.PHONY: clean
+## Clean target
+.PHONY: clean
 clean:
 	-rm -rf $(OBJECTS) tinyg.elf dep/* tinyg.hex tinyg.eep tinyg.lss tinyg.map
+
 
 ## Other dependencies
 -include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)

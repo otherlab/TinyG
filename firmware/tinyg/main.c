@@ -121,7 +121,7 @@ void tg_application_reset(void)
 	PMIC_EnableMediumLevel();
 	PMIC_EnableLowLevel();
 	sei();					// enable global interrupts
-	tg_print_system_ready();// (LAST) announce system is ready
+	tg_print_system_ready_message();// (LAST) announce system is ready
 }
 
 static void _tg_unit_tests(void) // uncomment __UNITS... line in .h file to enable unit tests
@@ -148,16 +148,15 @@ int main(void)
 	tg_application_startup();
 
 #ifdef __STANDALONE_MODE
-	for(;;){ tg_controller();}	// this mode executes gcode blocks received via USB
+	while(true){ tg_controller();}	// this mode executes gcode blocks received via USB
 #endif
 
 #ifdef __MASTER_MODE
-	for(;;){ tg_repeater();}	// this mode receives on USB and repeats to RS485
-	}
+	while(true){ tg_repeater();}	// this mode receives on USB and repeats to RS485
 #endif
 
 #ifdef __SLAVE_MODE
-	for(;;){ tg_receiver();}	// this mode executes gcode blocks received via RS485
+	while(true){ tg_receiver();}	// this mode executes gcode blocks received via RS485
 #endif
 }
 

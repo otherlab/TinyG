@@ -17,6 +17,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -27,7 +28,6 @@
 //#include <ctype.h>
 #include <stdio.h>
 #include <avr/pgmspace.h>
-#include <math.h>
 
 #include "tinyg.h"
 #include "util.h"
@@ -58,7 +58,7 @@ These commands are active from the command line:\n\
 "));
 _help_status_report_advisory();
 _help_postscript();
-tg_print_system_ready();
+tg_print_system_ready_message();
 }
 
 /*

@@ -42,13 +42,17 @@
 
 double vector[AXES];				// vector of axes for passing to subroutines
 
+double min3(double x1, double x2, double x3);
+double min4(double x1, double x2, double x3, double x4);
+double max3(double x1, double x2, double x3);
+double max4(double x1, double x2, double x3, double x4);
 uint8_t isnumber(char c);
 uint8_t read_double(char *buf, uint8_t *i, double *double_ptr);
-uint32_t calculate_hash(char const *string);
+uint16_t compute_checksum(char const *string, const uint16_t length);
 
 void copy_vector(double dest[], const double src[], uint8_t length);
 void copy_axis_vector(double dest[], const double src[]);
-void set_unit_vector(double unit[], double target[], double position[]);
+//void set_unit_vector(double unit[], double target[], double position[]);
 double get_axis_vector_length(const double a[], const double b[]);
 double *set_vector(double x, double y, double z, double a, double b, double c);
 double *set_vector_by_axis(double value, uint8_t axis);
@@ -61,41 +65,29 @@ uint8_t errcode;
 
 /***** Math Support *****/
 
+#define HASHMASK 9999
+#define HASHLENGTH 4
+
 // side-effect safe forms of min and max
 #ifndef max
 #define max(a,b) \
-   ({ __typeof__ (a) A = (a); \
-      __typeof__ (b) B = (b); \
-      A>B ? A:B; })
+   ({ __typeof__ (a) termA = (a); \
+      __typeof__ (b) termB = (b); \
+	  termA>termB ? termA:termB; })
 #endif
 
 #ifndef min
 #define min(a,b) \
-   ({ __typeof__ (a) A = (a); \
-      __typeof__ (b) B = (b); \
-      A<B ? A:B; })
+   ({ __typeof__ (a) termA = (a); \
+      __typeof__ (b) termB = (b); \
+      termA<termB ? termA:termB; })
 #endif
-
-#define min3(a,b,c) (min(min(a,b),c))
-#define min4(a,b,c,d) (min(min(a,b),min(c,d)))
-#define max3(a,b,c) (max(max(a,b),c))
-#define max4(a,b,c,d) (max(max(a,b),max(c,d)))
 
 #ifndef avg
 #define avg(a,b) ((a+b)/2)
 #endif
 
-/*
-#ifndef square
-#define square(a) ((a)*(a))
-#endif
-*/
-
-#define cube(a) ((a)*(a)*(a))
-#define cubert(a) pow((a), 0.33333333333333)
-
 #ifndef EPSILON
-//#define EPSILON 0.0001					// rounding error for floats
 #define EPSILON 0.00001						// rounding error for floats
 #endif
 #ifndef fp_EQ

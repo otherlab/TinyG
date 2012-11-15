@@ -64,7 +64,6 @@
 //#include <stdio.h>						// precursor to xio.h
 //#include <avr/pgmspace.h>					// precursor to xio.h
 #include <avr/interrupt.h>
-#include <math.h>
 
 #include "tinyg.h"
 #include "util.h"
@@ -98,8 +97,7 @@ static uint8_t gpio_port_value;				// global for synthetic port read value
 
 void gpio_init(void)
 {
-//	cli();
-	uint8_t int_mode = 0;                       // interrupt mode
+	uint8_t int_mode;							// interrupt mode
 	uint8_t pin_mode = PORT_OPC_PULLUP_gc;		// pin mode. see iox192a3.h for details
 	//uint8_t pin_mode = PORT_OPC_TOTEM_gc;		// alternate pin mode for v7 boards
 
@@ -161,8 +159,6 @@ static void _switch_isr_helper(uint8_t sw_flag, uint8_t axis)
 	if (sw.lockout_count != 0) return;		// exit if you are in a debounce lockout
 	if (cfg.a[axis].switch_mode == SW_MODE_DISABLED) return;
 
-//	gpio_read_switches();					// now read the switches for real
-//	if (sw.thrown == false) return;			// false alarm
 	sw.lockout_count = SW_LOCKOUT_TICKS;	// start the debounce lockout timer
 	sw.thrown = true;						// triggers the switch handler tasks
 	sw.flags[sw_flag] = true;
@@ -187,7 +183,7 @@ static void _switch_isr_helper(uint8_t sw_flag, uint8_t axis)
 
 inline void gpio_switch_timer_callback(void)
 {
-	if (sw.lockout_count) { --sw.lockout_count;}	// counts down to zero and sticks on zero
+	if (sw.lockout_count != 0) { --sw.lockout_count;}	// counts down to zero and sticks on zero
 }
 
 /*

@@ -17,6 +17,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
@@ -162,12 +163,15 @@
 #include "config.h"
 #include "stepper.h" 	
 #include "planner.h"
-
 #define MOTOR_POWER_ON_MOVE 1   // enable all motor power when moving any axis
+
 
 static void _exec_move(void);
 static void _load_move(void);
 static void _request_load_move(void);
+
+#define __ISR_R2				// comment out to use R1 ISR
+#define __LOAD_MOVE_R2			// comment out to use R1 load move routine
 
 static void _set_f_dda(double *f_dda, double *dda_substeps,
 					   const double major_axis_steps, const double microseconds);
@@ -194,8 +198,6 @@ struct stRunMotor { 				// one per controlled motor
 	int32_t steps;					// total steps in axis
 	int32_t counter;				// DDA counter for axis
 	uint8_t polarity;				// 0=normal polarity, 1=reverse motor polarity
-// experimental values:
-//	int8_t step_counter_incr;		// counts positive or negative steps
 };
 
 struct stRunSingleton {				// Stepper static values and axis parameters
@@ -251,11 +253,14 @@ void st_init()
 	device.port[MOTOR_3] = &PORT_MOTOR_3;
 	device.port[MOTOR_4] = &PORT_MOTOR_4;
 
+	// Configure virtual ports
+	PORTCFG.VPCTRLA = PORTCFG_VP0MAP_PORT_MOTOR_1_gc | PORTCFG_VP1MAP_PORT_MOTOR_2_gc;
+	PORTCFG.VPCTRLB = PORTCFG_VP2MAP_PORT_MOTOR_3_gc | PORTCFG_VP3MAP_PORT_MOTOR_4_gc;
+
 	for (uint8_t i=0; i<MOTORS; i++) {
 		// setup port. Do this first or st_set_microsteps() can fail
 		device.port[i]->DIR = MOTOR_PORT_DIR_gm;// set inputs & outputs
-		device.port[i]->OUT = 0x00;				// zero port bits
-		device.port[i]->OUTSET = MOTOR_ENABLE_BIT_bm; // disable motor
+		device.port[i]->OUT = MOTOR_ENABLE_BIT_bm;// zero port bits AND disable motor
 
 		st_set_microsteps(i, cfg.m[i].microsteps);
 		// NOTE: st_set_polarity(i, cfg.a[i].polarity);	// motor polarity
@@ -309,6 +314,54 @@ void st_reset()
 
 ISR(TIMER_DDA_ISR_vect)
 {
+#ifdef __ISR_R2 
+	if ((st.m[MOTOR_1].counter += st.m[MOTOR_1].steps) > 0) {
+		PORT_MOTOR_1_VPORT.OUT |= STEP_BIT_bm;	// turn step bit on
+ 		st.m[MOTOR_1].counter -= st.timer_ticks_X_substeps;
+		PORT_MOTOR_1_VPORT.OUT &= ~STEP_BIT_bm;	// turn step bit off in ~1 uSec
+	}
+	if ((st.m[MOTOR_2].counter += st.m[MOTOR_2].steps) > 0) {
+		PORT_MOTOR_2_VPORT.OUT |= STEP_BIT_bm;
+ 		st.m[MOTOR_2].counter -= st.timer_ticks_X_substeps;
+		PORT_MOTOR_2_VPORT.OUT &= ~STEP_BIT_bm;
+	}
+	if ((st.m[MOTOR_3].counter += st.m[MOTOR_3].steps) > 0) {
+		PORT_MOTOR_3_VPORT.OUT |= STEP_BIT_bm;
+ 		st.m[MOTOR_3].counter -= st.timer_ticks_X_substeps;
+		PORT_MOTOR_3_VPORT.OUT &= ~STEP_BIT_bm;
+	}
+	if ((st.m[MOTOR_4].counter += st.m[MOTOR_4].steps) > 0) {
+		PORT_MOTOR_4_VPORT.OUT |= STEP_BIT_bm;
+ 		st.m[MOTOR_4].counter -= st.timer_ticks_X_substeps;
+		PORT_MOTOR_4_VPORT.OUT &= ~STEP_BIT_bm;
+	}
+	if (--st.timer_ticks_downcount == 0) {			// end move
+ 		TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;		// disable DDA timer
+
+#if MOTOR_POWER_ON_MOVE
+    	PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm;
+   		PORT_MOTOR_2.OUTSET = MOTOR_ENABLE_BIT_bm;
+    	PORT_MOTOR_3.OUTSET = MOTOR_ENABLE_BIT_bm;
+    	PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm;
+#else
+
+		// power-down motors if this feature is enabled
+		if (cfg.m[MOTOR_1].power_mode == true) {
+			PORT_MOTOR_1_VPORT.OUT |= MOTOR_ENABLE_BIT_bm; 
+		}
+		if (cfg.m[MOTOR_2].power_mode == true) {
+			PORT_MOTOR_2_VPORT.OUT |= MOTOR_ENABLE_BIT_bm; 
+		}
+		if (cfg.m[MOTOR_3].power_mode == true) {
+			PORT_MOTOR_3_VPORT.OUT |= MOTOR_ENABLE_BIT_bm; 
+		}
+		if (cfg.m[MOTOR_4].power_mode == true) {
+			PORT_MOTOR_4_VPORT.OUT |= MOTOR_ENABLE_BIT_bm; 
+#endif
+		}
+		_load_move();							// load the next move
+	}
+#else
 	if ((st.m[MOTOR_1].counter += st.m[MOTOR_1].steps) > 0) {
 		PORT_MOTOR_1.OUTSET = STEP_BIT_bm;	// turn step bit on
  		st.m[MOTOR_1].counter -= st.timer_ticks_X_substeps;
@@ -331,16 +384,17 @@ ISR(TIMER_DDA_ISR_vect)
 	}
 	if (--st.timer_ticks_downcount == 0) {			// end move
  		TIMER_DDA.CTRLA = STEP_TIMER_DISABLE;		// disable DDA timer
-		
+
 #if MOTOR_POWER_ON_MOVE
-    PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm;
-    PORT_MOTOR_2.OUTSET = MOTOR_ENABLE_BIT_bm;
-    PORT_MOTOR_3.OUTSET = MOTOR_ENABLE_BIT_bm;
-    PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm;
+    	PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm;
+    	PORT_MOTOR_2.OUTSET = MOTOR_ENABLE_BIT_bm;
+    	PORT_MOTOR_3.OUTSET = MOTOR_ENABLE_BIT_bm;
+    	PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm;
 #else
-        // power-down motors if this feature is enabled
+
+		// power-down motors if this feature is enabled
 		if (cfg.m[MOTOR_1].power_mode == true) {
-			PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm;
+			PORT_MOTOR_1.OUTSET = MOTOR_ENABLE_BIT_bm; 
 		}
 		if (cfg.m[MOTOR_2].power_mode == true) {
 			PORT_MOTOR_2.OUTSET = MOTOR_ENABLE_BIT_bm; 
@@ -351,9 +405,9 @@ ISR(TIMER_DDA_ISR_vect)
 		if (cfg.m[MOTOR_4].power_mode == true) {
 			PORT_MOTOR_4.OUTSET = MOTOR_ENABLE_BIT_bm; 
 		}
-#endif
 		_load_move();							// load the next move
 	}
+#endif
 }
 
 ISR(TIMER_DWELL_ISR_vect) {				// DWELL timer interupt
@@ -427,13 +481,99 @@ static void _request_load_move()
  */
 
 void _load_move()
+#ifdef __LOAD_MOVE_R2
 {
 	if (st.timer_ticks_downcount != 0) { return;}				 // exit if it's still busy
 	if (sp.exec_state != PREP_BUFFER_OWNED_BY_LOADER) {	return;} // if there are no more moves
 
-	// handle line loads first (most common case)
-//	if ((sp.move_type == MOVE_TYPE_ALINE) || (sp.move_type == MOVE_TYPE_LINE)) {
-	if (sp.move_type == MOVE_TYPE_ALINE) {						// no more lines, only alines
+	// handle aline loads first (most common case)  NB: there are no more lines, only alines
+	if (sp.move_type == MOVE_TYPE_ALINE) {
+		st.timer_ticks_downcount = sp.timer_ticks;
+		st.timer_ticks_X_substeps = sp.timer_ticks_X_substeps;
+		TIMER_DDA.PER = sp.timer_period;
+ 
+		// This section is somewhat optimized for execution speed 
+		// All axes must set steps and compensate for out-of-range pulse phasing. 
+		// If axis has 0 steps the direction setting can be omitted
+		// If axis has 0 steps enabling motors is req'd to support power mode = 1
+
+#ifdef MOTOR_1
+		st.m[MOTOR_1].steps = sp.m[MOTOR_1].steps;			// set steps
+		if (sp.counter_reset_flag == true) {				// compensate for pulse phasing
+			st.m[MOTOR_1].counter = -(st.timer_ticks_downcount);
+		}
+		if (st.m[MOTOR_1].steps != 0) {
+			// For ideal optimizations, only set or clear a bit at a time.
+			if (sp.m[MOTOR_1].dir == 0) {
+				PORT_MOTOR_1_VPORT.OUT &= ~DIRECTION_BIT_bm;// CW motion (bit cleared)
+			} else {
+				PORT_MOTOR_1_VPORT.OUT |= DIRECTION_BIT_bm;	// CCW motion
+			}
+			PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;	// enable motor
+		}
+#endif
+#ifdef MOTOR_2
+		st.m[MOTOR_2].steps = sp.m[MOTOR_2].steps;
+		if (sp.counter_reset_flag == true) {
+			st.m[MOTOR_2].counter = -(st.timer_ticks_downcount);
+		}
+		if (st.m[MOTOR_2].steps != 0) {
+			if (sp.m[MOTOR_2].dir == 0) {
+				PORT_MOTOR_2_VPORT.OUT &= ~DIRECTION_BIT_bm;
+			} else {
+				PORT_MOTOR_2_VPORT.OUT |= DIRECTION_BIT_bm;
+			}
+			PORT_MOTOR_2_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+		}
+#endif
+#ifdef MOTOR_3
+		st.m[MOTOR_3].steps = sp.m[MOTOR_3].steps;
+		if (sp.counter_reset_flag == true) {
+			st.m[MOTOR_3].counter = -(st.timer_ticks_downcount);
+		}
+		if (st.m[MOTOR_3].steps != 0) {
+			if (sp.m[MOTOR_3].dir == 0) {
+				PORT_MOTOR_3_VPORT.OUT &= ~DIRECTION_BIT_bm;
+			} else {
+				PORT_MOTOR_3_VPORT.OUT |= DIRECTION_BIT_bm;
+			}
+			PORT_MOTOR_3_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+		}
+#endif
+#ifdef MOTOR_4
+		st.m[MOTOR_4].steps = sp.m[MOTOR_4].steps;
+		if (sp.counter_reset_flag == true) {
+			st.m[MOTOR_4].counter = -(st.timer_ticks_downcount);
+		}
+		if (st.m[MOTOR_4].steps != 0) {
+			if (sp.m[MOTOR_4].dir == 0) {
+				PORT_MOTOR_4_VPORT.OUT &= ~DIRECTION_BIT_bm;
+			} else {
+				PORT_MOTOR_4_VPORT.OUT |= DIRECTION_BIT_bm;
+			}
+			PORT_MOTOR_4_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+		}
+#endif
+		TIMER_DDA.CTRLA = STEP_TIMER_ENABLE;					// enable the DDA timer
+
+	// handle dwells
+	} else if (sp.move_type == MOVE_TYPE_DWELL) {
+		st.timer_ticks_downcount = sp.timer_ticks;
+		TIMER_DWELL.PER = sp.timer_period;						// load dwell timer period
+ 		TIMER_DWELL.CTRLA = STEP_TIMER_ENABLE;					// enable the dwell timer
+	}
+
+	// all other cases drop to here (e.g. Null moves after Mcodes skip to here) 
+	sp.exec_state = PREP_BUFFER_OWNED_BY_EXEC;					// flip it back
+	st_request_exec_move();										// exec and prep next move
+}
+#else
+{
+	if (st.timer_ticks_downcount != 0) { return;}				 // exit if it's still busy
+	if (sp.exec_state != PREP_BUFFER_OWNED_BY_LOADER) {	return;} // if there are no more moves
+
+	// handle aline loads first (most common case)  NB: there are no more lines, only alines
+	if (sp.move_type == MOVE_TYPE_ALINE) {
 		st.timer_ticks_downcount = sp.timer_ticks;
 		st.timer_ticks_X_substeps = sp.timer_ticks_X_substeps;
 		TIMER_DDA.PER = sp.timer_period;
@@ -452,14 +592,14 @@ void _load_move()
 					device.port[i]->OUTCLR = DIRECTION_BIT_bm;	// CW motion
 				} else {
 					device.port[i]->OUTSET = DIRECTION_BIT_bm;	// CCW motion
-				}
 #if !MOTOR_POWER_ON_MOVE
-				device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;	// enable motor
+				}
 #endif
-			}
+				device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;	// enable motor
 #if MOTOR_POWER_ON_MOVE
             device.port[i]->OUTCLR = MOTOR_ENABLE_BIT_bm;   // enable all motors
 #endif
+			}
 		}
 		TIMER_DDA.CTRLA = STEP_TIMER_ENABLE;					// enable the DDA timer
 
@@ -474,6 +614,7 @@ void _load_move()
 	sp.exec_state = PREP_BUFFER_OWNED_BY_EXEC;					// flip it back
 	st_request_exec_move();										// exec and prep next move
 }
+#endif
 
 /*
  * st_prep_line() - Prepare the next move for the loader

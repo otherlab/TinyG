@@ -57,14 +57,14 @@
  * set_vector_by_axis()		- load a single value into a zero vector
  */
 
-void copy_vector(double dest[], const double src[], uint8_t length) 
+inline void copy_vector(double dest[], const double src[], uint8_t length) 
 {
 	for (uint8_t i=0; i<length; i++) {
 		dest[i] = src[i];
 	}
 }
 
-void copy_axis_vector(double dest[], const double src[]) 
+inline void copy_axis_vector(double dest[], const double src[]) 
 {
 	memcpy(dest, src, sizeof(double)*AXES);
 }
@@ -78,7 +78,7 @@ double get_axis_vector_length(const double a[], const double b[])
 				 square(a[B] - b[B]) +
 				 square(a[C] - b[C])));
 }
-
+/*
 void set_unit_vector(double unit[], double target[], double position[])
 {
 	double recip_length = 1/get_axis_vector_length(target, position);
@@ -89,7 +89,7 @@ void set_unit_vector(double unit[], double target[], double position[])
 	unit[B] = (target[B] - position[B]) * recip_length;
 	unit[C] = (target[C] - position[C]) * recip_length;
 }
-
+*/
 double *set_vector(double x, double y, double z, double a, double b, double c)
 {
 	vector[X] = x;
@@ -116,6 +116,55 @@ double *set_vector_by_axis(double value, uint8_t axis)
 }
 
 /**** Math and other general purpose functions ****/
+
+/* Slightly faster (*) multi-value min and max functions
+ * 	min3() - return minimum of 3 numbers
+ * 	min4() - return minimum of 4 numbers
+ * 	max3() - return maximum of 3 numbers
+ * 	max4() - return maximum of 4 numbers
+ *
+ * Implementation tip: Order the min and max values from most to least likely in the calling args
+ *
+ * (*) Macro min4 is about 20uSec, inline function version is closer to 10 uSec
+ * 	#define min3(a,b,c) (min(min(a,b),c))
+ *	#define min4(a,b,c,d) (min(min(a,b),min(c,d)))
+ *	#define max3(a,b,c) (max(max(a,b),c))
+ *	#define max4(a,b,c,d) (max(max(a,b),max(c,d)))
+ */
+
+inline double min3(double x1, double x2, double x3)
+{
+	double min = x1;
+	if (x2 < min) { min = x2;} 
+	if (x3 < min) { return (x3);} 
+	return (min);
+}
+
+inline double min4(double x1, double x2, double x3, double x4)
+{
+	double min = x1;
+	if (x2 < min) { min = x2;} 
+	if (x3 < min) { min = x3;} 
+	if (x4 < min) { return (x4);}
+	return (min);
+}
+
+inline double max3(double x1, double x2, double x3)
+{
+	double max = x1;
+	if (x2 > max) { max = x2;} 
+	if (x3 > max) { return (x3);} 
+	return (max);
+}
+
+inline double max4(double x1, double x2, double x3, double x4)
+{
+	double max = x1;
+	if (x2 > max) { max = x2;} 
+	if (x3 > max) { max = x3;} 
+	if (x4 > max) { return (x4);}
+	return (max);
+}
 
 /*
  * isnumber() - isdigit that also accepts plus, minus, and decimal point
@@ -154,19 +203,25 @@ uint8_t read_double(char *buf, uint8_t *i, double *double_ptr)
 }
 
 /* 
- * calculate_hash() - calculate 32-bit hash code for a string
+ * compute_checksum() - calculate the checksum for a string
  * 
- * This is the Java hashCode function. See http://en.wikipedia.org/wiki/Java_hashCode()
+ *	Stops calculation on null termination or length value if non-zero.
+ *
+ * 	This is based on the the Java hashCode function. 
+ *	See http://en.wikipedia.org/wiki/Java_hashCode()
  */
-uint32_t calculate_hash(char const *string) 
-{	
+uint16_t compute_checksum(char const *string, const uint16_t length) 
+{
 	uint32_t h = 0;
     uint16_t len = strlen(string);
 
+	if (length != 0) {
+		len = min(len, length);
+	}
     for (uint16_t i=0; i<len; i++) {
 		h = 31 * h + string[i];
     }
-    return h;
+    return (h % HASHMASK);
 }
 
 
