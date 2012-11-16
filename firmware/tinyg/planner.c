@@ -1879,7 +1879,6 @@ static mpBuf * _get_write_buffer() 				// get & clear a buffer
 		w->buffer_state = MP_BUFFER_LOADING;
 		w->lineindex = (++mm.lineindex);		// increment line index and store in buffer
 		mb.buffers_available--;
-		mb.buffers_available--;
 		mb.w = w->nx;
 		return (w);
 	}

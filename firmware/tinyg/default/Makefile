@@ -4,10 +4,10 @@
 
 ## General Flags
 PROJECT = tinyg
-MCU = atxmega256a3
-PROG_MCU = x256a3
-#MCU = atxmega192a3
-#PROG_MCU = x192a3
+#MCU = atxmega256a3
+#PROG_MCU = x256a3
+MCU = atxmega192a3
+PROG_MCU = x192a3
 TARGET = tinyg.elf
 CC = avr-gcc
 

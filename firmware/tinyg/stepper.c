@@ -162,7 +162,6 @@
 #include "config.h"
 #include "stepper.h" 	
 #include "planner.h"
-#define MOTOR_POWER_ON_MOVE 1   // enable all motor power when moving any axis
 
 static void _exec_move(void);
 static void _load_move(void);
@@ -170,6 +169,7 @@ static void _request_load_move(void);
 
 #define __ISR_R2				// comment out to use R1 ISR
 #define __LOAD_MOVE_R2			// comment out to use R1 load move routine
+#define MOTOR_POWER_ON_MOVE 1   // enable all motor power when moving any axis
 
 static void _set_f_dda(double *f_dda, double *dda_substeps,
 					   const double major_axis_steps, const double microseconds);
@@ -508,9 +508,15 @@ void _load_move()
 			} else {
 				PORT_MOTOR_1_VPORT.OUT |= DIRECTION_BIT_bm;	// CCW motion
 			}
+#if !MOTOR_POWER_ON_MOVE
 			PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;	// enable motor
-		}
 #endif
+		}
+#if MOTOR_POWER_ON_MOVE
+        PORT_MOTOR_1_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+#endif
+#endif
+        
 #ifdef MOTOR_2
 		st.m[MOTOR_2].steps = sp.m[MOTOR_2].steps;
 		if (sp.counter_reset_flag == true) {
@@ -522,9 +528,15 @@ void _load_move()
 			} else {
 				PORT_MOTOR_2_VPORT.OUT |= DIRECTION_BIT_bm;
 			}
+#if !MOTOR_POWER_ON_MOVE
 			PORT_MOTOR_2_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
-		}
 #endif
+		}
+#if MOTOR_POWER_ON_MOVE
+        PORT_MOTOR_2_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+#endif
+#endif
+        
 #ifdef MOTOR_3
 		st.m[MOTOR_3].steps = sp.m[MOTOR_3].steps;
 		if (sp.counter_reset_flag == true) {
@@ -536,9 +548,15 @@ void _load_move()
 			} else {
 				PORT_MOTOR_3_VPORT.OUT |= DIRECTION_BIT_bm;
 			}
+#if !MOTOR_POWER_ON_MOVE
 			PORT_MOTOR_3_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
-		}
 #endif
+		}
+#if MOTOR_POWER_ON_MOVE
+        PORT_MOTOR_3_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+#endif
+#endif
+        
 #ifdef MOTOR_4
 		st.m[MOTOR_4].steps = sp.m[MOTOR_4].steps;
 		if (sp.counter_reset_flag == true) {
@@ -550,8 +568,13 @@ void _load_move()
 			} else {
 				PORT_MOTOR_4_VPORT.OUT |= DIRECTION_BIT_bm;
 			}
+#if !MOTOR_POWER_ON_MOVE
 			PORT_MOTOR_4_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+#endif
 		}
+#if MOTOR_POWER_ON_MOVE
+        PORT_MOTOR_4_VPORT.OUT &= ~MOTOR_ENABLE_BIT_bm;
+#endif
 #endif
 		TIMER_DDA.CTRLA = STEP_TIMER_ENABLE;					// enable the DDA timer
 
