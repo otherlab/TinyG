@@ -145,8 +145,7 @@ uint8_t cm_homing_cycle(void)
 	hm.axis = -1;							// set to retrieve initial axis
 	hm.func = _homing_axis_start; 			// bind initial processing function
 	cm.cycle_state = CYCLE_HOMING;
-	cm.homing_state = HOMING_NOT_HOMED;
-	return (TG_OK);
+    return (TG_OK);
 }
 
 uint8_t cm_homing_callback(void)
@@ -168,12 +167,13 @@ static uint8_t _homing_axis_start(int8_t axis)
 {
 	// get first or next axis
 	if ((axis = _get_next_axis(axis)) < 0) { 		// axes are done or error
-		if (axis == -1) {							// -1 is done
+		if (axis == -1) { // -1 is done
 			return (_set_hm_func(_homing_finalize));
 		} else if (axis == -2) { 					// -2 is error
 			cm_set_units_mode(hm.units_mode_saved);
 			cm_set_distance_mode(hm.distance_mode_saved);
 			cm.cycle_state = CYCLE_STARTED;
+            cm.homing_state = HOMING_NOT_HOMED; // clear all on error
 			cm_exec_cycle_end();
 			return (TG_HOMING_CYCLE_FAILED);
 		}
@@ -182,6 +182,9 @@ static uint8_t _homing_axis_start(int8_t axis)
 		return (TG_GCODE_INPUT_ERROR);				// requested axis can't be homed
 	}
 
+    // clear the homing flag for this axis
+    cm.homing_state &= ~(1<<axis);
+    
 	hm.axis = axis;
 	hm.search_velocity = fabs(cfg.a[axis].search_velocity); // search velocity is always positive
 	hm.latch_velocity = fabs(cfg.a[axis].latch_velocity); 	// and so is latch velocity
@@ -251,6 +254,9 @@ static uint8_t _homing_axis_zero_backoff(int8_t axis)
 
 static uint8_t _homing_axis_set_zero(int8_t axis)
 {
+    // set the homing bit for this axis
+    cm.homing_state |= 1<<axis;
+    
 	cm_set_machine_axis_position(axis, 0);
 	return (_set_hm_func(_homing_axis_start));
 }
@@ -272,7 +278,6 @@ static uint8_t _homing_finalize(int8_t axis)	// third part of return to home
 	cm_set_units_mode(hm.units_mode_saved);
 	cm_set_distance_mode(hm.distance_mode_saved);
 	cm_set_feed_rate(hm.feed_rate_saved);
-	cm.homing_state = HOMING_HOMED;
 	cm.cycle_state = CYCLE_STARTED;
 	cm_exec_cycle_end();
 	return (TG_OK);
