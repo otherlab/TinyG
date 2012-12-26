@@ -213,7 +213,9 @@ static void _plan_block_list(mpBuf *bf, uint8_t *mr_flag);
 static void _calculate_trapezoid(mpBuf *bf);
 static double _get_target_length(const double Vi, const double Vt, const mpBuf *bf);
 static double _get_target_velocity(const double Vi, const double L, const mpBuf *bf);
+#ifdef __PLAN_R2
 static double _get_intersection_distance(const double Vi_squared, const double Vt_squared, const double L, const mpBuf *bf);
+#endif
 static double _get_junction_vmax(const double a_unit[], const double b_unit[]);
 static void _reset_replannable_list(void);
 

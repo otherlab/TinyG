@@ -34,8 +34,9 @@
  */
 
 #include <stdio.h>
-#include <stddef.h> 
-#include <avr\pgmspace.h> 
+#include <stddef.h>
+//#include <avr\pgmspace.h>
+#include <avr/pgmspace.h>
 
 #include "tinyg.h"
 #include "system.h"

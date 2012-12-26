@@ -4,7 +4,10 @@
 
 ## General Flags
 PROJECT = tinyg
-MCU = atxmega192a3
+MCU = atxmega256a3
+PROG_MCU = x256a3
+#MCU = atxmega192a3
+#PROG_MCU = x192a3
 TARGET = tinyg.elf
 CC = avr-gcc
 
@@ -15,7 +18,7 @@ COMMON = -mmcu=$(MCU)
 
 ## Compile options common for all C compilation units.
 CFLAGS = $(COMMON)
-CFLAGS += -Wall -gdwarf-2 -std=gnu99                                    -DF_CPU=32000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+CFLAGS += -Wall -gdwarf-2 -std=gnu99                             -DF_CPU=32000000UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d 
 
 ## Assembly specific flags
@@ -47,6 +50,10 @@ LINKONLYOBJECTS =
 
 ## Build
 all: $(TARGET) tinyg.hex tinyg.eep tinyg.lss size
+
+## Install
+install: tinyg.hex
+	avrdude -p $(PROG_MCU) -c avrispmkII -P usb -Uflash:w:tinyg.hex
 
 ## Compile
 util.o: ../util.c
@@ -154,7 +161,7 @@ $(TARGET): $(OBJECTS)
 
 size: ${TARGET}
 	@echo
-	@avr-size -C --mcu=${MCU} ${TARGET}
+	@avr-size ${TARGET}
 
 ## Clean target
 .PHONY: clean
