@@ -122,7 +122,7 @@ uint8_t cm_set_spindle_speed(double speed)
 //	if (speed > cfg.max_spindle speed) {
 //		return (TG_MAX_SPINDLE_SPEED_EXCEEDED);
 //	}
-	cm_set_spindle_speed_parameter(speed);
+    cm_set_spindle_speed_parameter(speed);
     
     // update spindle speed if we're running
     pwm_set_duty(PWM_1, cm_get_spindle_pwm(gm.spindle_mode) );
@@ -135,5 +135,5 @@ uint8_t cm_set_spindle_speed(double speed)
  */
 void cm_exec_spindle_speed(double speed)
 {
-
+	cm_set_spindle_speed(speed);
 }
