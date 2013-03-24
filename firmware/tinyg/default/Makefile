@@ -53,7 +53,8 @@ all: $(TARGET) tinyg.hex tinyg.eep tinyg.lss size
 
 ## Install
 install: tinyg.hex
-	avrdude -p $(PROG_MCU) -c avrispmkII -P usb -Uflash:w:tinyg.hex
+	##avrdude -p $(PROG_MCU) -c avrispmkII -P usb -Uflash:w:tinyg.hex
+	avrdude -p $(PROG_MCU) -c avr109 -b 115200 -P /dev/tty.usbserial-* -Uflash:w:tinyg.hex
 
 ## Compile
 util.o: ../util.c
